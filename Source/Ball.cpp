@@ -36,7 +36,7 @@ CircleCollider& Ball::getHitbox()
 
 
 
-Ball::Ball(Vector3 Position, int Radius,  int Gravity) : PhysicsObject(Position, Gravity), hitbox(Position, Radius)
+Ball::Ball(Vector3 Position, float Radius,  float Gravity) : PhysicsObject(Position, Gravity), hitbox(Position, Radius)
 {
 }
 

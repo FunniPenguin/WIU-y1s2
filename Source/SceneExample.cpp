@@ -13,9 +13,13 @@
 #include "shader.hpp"
 #include "Application.h"
 #include "MeshBuilder.h"
+#include "MouseController.h"
 #include "KeyboardController.h"
 #include "LoadTGA.h"
 #include "SceneManager.h"
+
+//Physics functions
+#include "CollisionDetection.h"
 
 void SceneExample::Init()
 {
@@ -91,6 +95,8 @@ void SceneExample::Init()
 		b = nullptr;
 	}
 	ballCD = 0;
+	groundHitbox = new SimplePlaneCollider(Vector3(0, 0, 0),
+		Vector3(-12.5f, 0, -12.5f), Vector3(12.5f, 0, 12.5f));
 }
 
 void SceneExample::Update(double dt)
@@ -115,7 +121,17 @@ void SceneExample::Update(double dt)
 	if (KeyboardController::GetInstance()->IsKeyDown('B') && (ballCD <= 0.f)) {
 		for (int i = 0; i < 50;i++) {
 			if (balls[i] == nullptr) {
-				balls[i] = new Ball{Vector3(0, 10, 0), 5, 20};
+				balls[i] = new Ball{Vector3(0, 10, 0), 1, 20};
+				ballCD = 0.5f;
+				break;
+			}
+		}
+	}
+	if (MouseController::GetInstance()->IsButtonPressed(0) && (ballCD <= 0.f)) {
+		for (int i = 0; i < 50; i++) {
+			if (balls[i] == nullptr) {
+				balls[i] = new Ball{ camera.position, 1, 20 };
+				balls[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
 				ballCD = 0.5f;
 				break;
 			}
@@ -124,6 +140,14 @@ void SceneExample::Update(double dt)
 	
 	for (int i = 0; i < 50; i++) {
 		if (balls[i] != nullptr) {
+			OverlapSphere2Plane(*balls[i], balls[i]->getHitbox(), *groundHitbox);
+			for (int j = i + 1; j < 50; j++) {
+				if (balls[j] != nullptr) {
+					CollisionData cd;
+					if (OverlapSphere2Sphere(*balls[i], balls[i]->getHitbox().getRadius(), *balls[j], balls[j]->getHitbox().getRadius(), cd))
+						ResolveCollision(cd);
+				}
+			}
 			balls[i]->UpdatePhysics(dt);
 		}
 	}
@@ -210,7 +234,9 @@ void SceneExample::Exit()
 			delete balls[i];
 		}
 	}
-
+	if (groundHitbox != nullptr) {
+		delete groundHitbox;
+	}
 	// Cleanup VBO here
 	for (int i = 0; i < NUM_GEOMETRY; ++i)
 	{
@@ -229,6 +255,9 @@ void SceneExample::cleanup()
 		if (balls[i] != nullptr) {
 			delete balls[i];
 		}
+	}
+	if (groundHitbox != nullptr) {
+		delete groundHitbox;
 	}
 }
 

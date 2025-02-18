@@ -23,7 +23,7 @@ private:
 public:
 	Vector3 getVel();
 	void setVel(Vector3 Vel);
-	void setVEl(float x, float y, float z);
+	void setVel(float x, float y, float z);
 	Vector3 getAccel();
 	void setAccel(Vector3 Accel);
 	void setAccel(float x, float y, float z);

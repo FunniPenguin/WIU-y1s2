@@ -16,6 +16,7 @@ class Ball : public PhysicsObject
 private:
 	CircleCollider hitbox;
 public:
+	//Note: Overload a game object's set and translate functions if the object has a hitbox so that the hibox gets moved
 	void setBallPosition(Vector3 Position);
 	void setBallPosition(AXIS axis, int value);
 	void translateBall(Vector3 translation);
@@ -23,7 +24,7 @@ public:
 
 	CircleCollider& getHitbox();
 
-	Ball(Vector3 Position, int Radius, int Gravity);
+	Ball(Vector3 Position, float Radius, float Gravity);
 	~Ball();
 };
 

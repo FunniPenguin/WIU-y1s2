@@ -50,7 +50,7 @@ void PhysicsObject::setVel(Vector3 Vel)
 	vel = Vel;
 }
 
-void PhysicsObject::setVEl(float x, float y, float z)
+void PhysicsObject::setVel(float x, float y, float z)
 {
 	vel = Vector3{ x, y, z };
 }
@@ -129,6 +129,8 @@ void PhysicsObject::UpdatePhysics(float dt)
 
 	//do angular movement
 	addRotation(angularVel * dt);
+
+	vel *= pow(0.5f, dt); //linear drag
 }
 
 void PhysicsObject::AddImpulse(const Vector3& impulse)
