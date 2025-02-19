@@ -110,7 +110,7 @@ void PhysicsObject::UpdatePhysics(float dt)
 	Vector3 Gravity{ 0, -gravity, 0 };
 	Vector3 initialVelocity = vel;
 	vel += Gravity * dt;
-	translatePosition((vel + initialVelocity) * 0.5f * dt);
+	translateObject((vel + initialVelocity) * 0.5f * dt);
 	Vector3 finalAccel = accel;
 	//if mass is 0, treat object as static/immovable
 	if (mass > 0)
@@ -122,7 +122,7 @@ void PhysicsObject::UpdatePhysics(float dt)
 
 	//euler integration
 	vel += finalAccel * dt;
-	translatePosition(vel * dt);
+	translateObject(vel * dt);
 
 	//clear forces
 	m_totalForces.SetZero();

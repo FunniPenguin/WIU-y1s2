@@ -60,7 +60,7 @@ void SceneExample::Init()
 
 	meshList[GEO_AXES] = MeshBuilder::GenerateAxes("Axes", 10000.f, 10000.f, 10000.f);
 	meshList[GEO_SPHERE] = MeshBuilder::GenerateSphere("Sphere", glm::vec3(1.f, 1.f, 1.f), 1.f, 16, 16);
-	meshList[GEO_CUBE] = MeshBuilder::GenerateCube("Cube", glm::vec3(0.5f, 0.5f, 0.5f), 1.f);
+	meshList[GEO_CUBE] = MeshBuilder::GenerateCube("Cube", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_PLANE] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_PLANE]->textureID = LoadTGA("Images//ground.tga");
 
@@ -91,19 +91,27 @@ void SceneExample::Init()
 	enableLight = true;
 
 	//Game variables
-	for (Ball* b : balls) {
-		b = nullptr;
+	for (int i = 0; i < 50;i++) {
+		balls[i] = nullptr;
 	}
 	ballCD = 0;
-	groundHitbox = new SimplePlaneCollider(Vector3(0, 0, 0),
-		Vector3(-12.5f, 0, -12.5f), Vector3(12.5f, 0, 12.5f));
+	for (int i = 0; i < 50;i++) {
+		cubes[i] = nullptr;
+	}
+	cubeCD = 0;
+	ground = new Ground(Vector3(0, 0, 0), Vector3(-12.5f, 0, -12.5f), Vector3(12.5f, 0, 12.5f));
 }
 
 void SceneExample::Update(double dt)
 {
 	HandleKeyPress();
+	if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
+		SceneManager::GetInstance().LoadScene(SCENE_START);
+		return;
+	}
 
 	ballCD -= dt;
+	cubeCD -= dt;
 
 	if (KeyboardController::GetInstance()->IsKeyDown('I'))
 		light[0].position.z -= static_cast<float>(dt) * 5.f;
@@ -118,7 +126,7 @@ void SceneExample::Update(double dt)
 	if (KeyboardController::GetInstance()->IsKeyDown('P'))
 		light[0].position.y += static_cast<float>(dt) * 5.f;
 
-	if (KeyboardController::GetInstance()->IsKeyDown('B') && (ballCD <= 0.f)) {
+	if (KeyboardController::GetInstance()->IsKeyPressed('B') && (ballCD <= 0.f)) {
 		for (int i = 0; i < 50;i++) {
 			if (balls[i] == nullptr) {
 				balls[i] = new Ball{Vector3(0, 10, 0), 1, 20};
@@ -140,7 +148,7 @@ void SceneExample::Update(double dt)
 	
 	for (int i = 0; i < 50; i++) {
 		if (balls[i] != nullptr) {
-			OverlapSphere2Plane(*balls[i], balls[i]->getHitbox(), *groundHitbox);
+			OverlapSphere2Plane(*balls[i], balls[i]->getHitbox(), ground->getHitbox());
 			for (int j = i + 1; j < 50; j++) {
 				if (balls[j] != nullptr) {
 					CollisionData cd;
@@ -149,6 +157,62 @@ void SceneExample::Update(double dt)
 				}
 			}
 			balls[i]->UpdatePhysics(dt);
+			if ((balls[i]->getPosition().x > 50) || (balls[i]->getPosition().x < -50) ||
+				(balls[i]->getPosition().y > 50) || (balls[i]->getPosition().y < -50) ||
+				(balls[i]->getPosition().z > 50) || (balls[i]->getPosition().z < -50)) {
+				delete balls[i];
+				balls[i] = nullptr;
+			}
+		}
+	}
+
+	if (KeyboardController::GetInstance()->IsKeyPressed('C') && (cubeCD <= 0.f)) {
+		for (int i = 0; i < 50; i++) {
+			if (cubes[i] == nullptr) {
+				cubes[i] = new Cube{ Vector3(0, 10, 0), 20, 1, 1, 1 };
+				cubeCD = 0.5f;
+				break;
+			}
+		}
+	}
+	if (MouseController::GetInstance()->IsButtonPressed(1) && (cubeCD <= 0.f)) {
+		for (int i = 0; i < 50; i++) {
+			if (cubes[i] == nullptr) {
+				cubes[i] = new Cube{ camera.position, 1, 2, 2, 2 };
+				cubes[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
+				cubeCD = 0.5f;
+				break;
+			}
+		}
+	}
+	for (int i = 0; i < 50; i++) {
+		if (cubes[i] != nullptr) {
+			std::cout << "Cube " << i << " Mass: " << cubes[i]->getMass() << std::endl;
+			CollisionData cd;
+			if (OverlapSimpleCube2Plane(*cubes[i], cubes[i]->getHitbox(), *ground, ground->getHitbox(), cd))
+				ResolveCollision(cd);
+			for (int j = 0; j < 50; j++) {
+				if (balls[j] != nullptr) {
+					if (OverlapSphere2Cube(*balls[j], balls[j]->getHitbox(), *cubes[i], cubes[i]->getHitbox(), cd))
+					{
+						ResolveCollision(cd);
+					}
+				}
+			}
+			for (int j = i + 1; j < 50; j++) {
+				if (cubes[j] != nullptr) {
+					CollisionData cd;
+					if (OverlapCube2Cube(*cubes[i], cubes[i]->getHitbox(), *cubes[j], cubes[j]->getHitbox(), cd))
+						ResolveCollision(cd);
+				}
+			}
+			cubes[i]->UpdatePhysics(dt);
+			if ((cubes[i]->getPosition().x > 50) || (cubes[i]->getPosition().x < -50) ||
+				(cubes[i]->getPosition().y > 50) || (cubes[i]->getPosition().y < -50) ||
+				(cubes[i]->getPosition().z > 50) || (cubes[i]->getPosition().z < -50)) {
+				delete cubes[i];
+				cubes[i] = nullptr;
+			}
 		}
 	}
 
@@ -214,7 +278,15 @@ void SceneExample::Render()
 			modelStack.PopMatrix();
 		}
 	}
-
+	for (int i = 0; i < 50; i++) {
+		if (cubes[i] != nullptr) {
+			modelStack.PushMatrix();
+			modelStack.Translate(cubes[i]->getPosition().x, cubes[i]->getPosition().y, cubes[i]->getPosition().z);
+			modelStack.Scale(2, 2, 2);
+			RenderMesh(meshList[GEO_CUBE], false);
+			modelStack.PopMatrix();
+		}
+	}
 	modelStack.PushMatrix();
 	modelStack.Rotate(-90, 1, 0, 0);
 	modelStack.Scale(25.f, 25.f, 1.f);
@@ -234,8 +306,13 @@ void SceneExample::Exit()
 			delete balls[i];
 		}
 	}
-	if (groundHitbox != nullptr) {
-		delete groundHitbox;
+	if (ground != nullptr) {
+		delete ground;
+	}
+	for (int i = 0; i < 50; i++) {
+		if (cubes[i] != nullptr) {
+			delete cubes[i];
+		}
 	}
 	// Cleanup VBO here
 	for (int i = 0; i < NUM_GEOMETRY; ++i)
@@ -249,23 +326,8 @@ void SceneExample::Exit()
 	glDeleteProgram(m_programID);
 }
 
-void SceneExample::cleanup()
-{
-	for (int i = 0; i < 50; i++) {
-		if (balls[i] != nullptr) {
-			delete balls[i];
-		}
-	}
-	if (groundHitbox != nullptr) {
-		delete groundHitbox;
-	}
-}
-
 void SceneExample::HandleKeyPress()
 {
-	if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
-		SceneManager::GetInstance().LoadScene(SCENE_START);
-	}
 	if (KeyboardController::GetInstance()->IsKeyPressed(0x31))
 	{
 		// Key press to enable culling

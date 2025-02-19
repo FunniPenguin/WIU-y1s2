@@ -27,6 +27,9 @@ public:
 	void setPosition(AXIS axis, int value);
 	void translatePosition(Vector3 Position);
 	void translatePosition(AXIS axis, int value);
+	virtual void translateObject(Vector3 Position);
+	virtual void translateObject(glm::vec3 Position);
+	virtual void setObjectPosition(Vector3 Position);
 	Vector3 getRotation() const;
 	void setRotation(Vector3 Rotation);
 	void setRotation(AXIS axis, int value);

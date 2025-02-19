@@ -5,6 +5,7 @@
 
 //Include colliders
 #include "CircleCollider.h"
+#include "BoxCollider.h"
 #include "SimplePlaneCollider.h"
 
 struct CollisionData {
@@ -22,8 +23,10 @@ bool OverlapSphere2Sphere(PhysicsObject& obj1, float r1, PhysicsObject& obj2, fl
 //					  PhysicsObject& box2, float width2, float height2,
 //					  CollisionData& cd);
 bool OverlapSphere2Plane(PhysicsObject& Sphere, CircleCollider& SphereHitbox,SimplePlaneCollider& PlaneHitbox);
-//bool OverlapSphere2AABB(Vector3 SpherePos, float radius, Vector3 boxMin, Vector3 boxMax);
-//bool OverlapSphere2AABB(PhysicsObject& ball, float radius, PhysicsObject& box, float width, float height, CollisionData cd);
+bool OverlapSphere2AABB(Vector3 SpherePos, float radius, Vector3 boxMin, Vector3 boxMax);
+bool OverlapSimpleCube2Plane(PhysicsObject& Cube, BoxCollider& Hitbox, PhysicsObject& Plane,SimplePlaneCollider& PlaneHitbox, CollisionData& cd);
+bool OverlapCube2Cube(PhysicsObject& Cube, BoxCollider& Hitbox, PhysicsObject& Cube2, BoxCollider& Hitbox2, CollisionData& cd);
+bool OverlapSphere2Cube(PhysicsObject& Sphere, CircleCollider& SphereHitbox, PhysicsObject& Cube, BoxCollider& CubeHitbox, CollisionData& cd);
 //collision resolution function
 //void ResolveSphere2StaticPlane(PhysicsObject& ball, float radius, const Vector3& min, const Vector3& max);
 //void ResolveSphere2StaticSphere(PhysicsObject& ball1, float radius1, PhysicsObject& ball2, float radius2);

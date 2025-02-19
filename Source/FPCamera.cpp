@@ -10,6 +10,7 @@ FPCamera::FPCamera() : isDirty(false)
 	this->position = glm::vec3(0, 0, 0);
 	this->target = glm::vec3(0, 0, 0);
 	this->up = glm::vec3(0, 1, 0);
+	cameraState = FIRST_PERSON;
 }
 
 FPCamera::~FPCamera()
@@ -130,17 +131,6 @@ void FPCamera::Update(double dt)
 		target = position + rotatedView;
 		isDirty = false; //set to true if want the view to rotate like an aeroplane
 	}
-	//if (MouseController::GetInstance()->GetMouseScrollStatus(MouseController::SCROLL_TYPE_YOFFSET)) {
-	//	right.y = 0; // Right vector should not point any y direction
-	//	// Calculate amount of angle to rotate
-	//	float angle = MouseController::GetInstance()->GetMouseScrollStatus(MouseController::SCROLL_TYPE_YOFFSET) * 0.25 * static_cast<float>(dt);
-	//	glm::mat4 pitch = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(right.x, right.y, right.z)); // Rotate on right vector
-	//	// Calculate the rotated view vector
-	//	glm::vec3 rotatedView = pitch * glm::vec4(view, 0.f);
-	//	target = position + rotatedView;
-	//	isDirty = false; //set to true if want the view to rotate like an aeroplane
-	//}
-	//position.y = originalY;
 }
 
 void FPCamera::Refresh()

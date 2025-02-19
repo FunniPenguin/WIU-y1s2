@@ -6,12 +6,18 @@
 #include <glm\gtc\matrix_transform.hpp>
 #include <glm\gtc\type_ptr.hpp>
 
+enum CSTATE {
+    FIRST_PERSON,
+    SECOND_PERSON,
+    THIRD_PERSON
+};
 class FPCamera
 {
 public:
     glm::vec3 position;
     glm::vec3 target;
     glm::vec3 up;
+    CSTATE cameraState;
     float xRot, yRot;
 
     FPCamera();

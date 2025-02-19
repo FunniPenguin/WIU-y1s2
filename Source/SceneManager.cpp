@@ -53,9 +53,9 @@ void SceneManager::LoadScene(SCENE_NUM scene2Load)
 
 void SceneManager::Exit()
 {
+	currentScene->Exit();
 	for (int i = 0; i < static_cast<int>(TOTAL_SCENE); i++) {
 		if (Scenes[i] != nullptr) {
-			Scenes[i]->cleanup();
 			delete Scenes[i];
 		}
 	}

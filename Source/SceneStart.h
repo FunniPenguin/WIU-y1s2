@@ -28,7 +28,6 @@ public:
 	void Update(double dt);
 	void Render();
 	void Exit();
-	void cleanup();
 	void InitLights();
 private:
 	void HandleKeyPress();

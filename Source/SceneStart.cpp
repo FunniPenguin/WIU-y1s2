@@ -75,7 +75,10 @@ void SceneStart::Init()
 void SceneStart::Update(double dt)
 {
 	HandleKeyPress();
-
+	if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
+		SceneManager::GetInstance().LoadScene(SCENE_EXAMPLE);
+		return;
+	}
 	//Since this is the start screen I want the camera to be stationary
 	//camera.Update(dt);
 }
@@ -145,15 +148,8 @@ void SceneStart::Exit()
 	glDeleteProgram(m_programID);
 }
 
-void SceneStart::cleanup()
-{
-}
-
 void SceneStart::HandleKeyPress()
 {
-	if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
-		SceneManager::GetInstance().LoadScene(SCENE_EXAMPLE);
-	}
 	if (KeyboardController::GetInstance()->IsKeyPressed(0x31))
 	{
 		// Key press to enable culling

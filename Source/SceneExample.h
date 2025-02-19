@@ -10,7 +10,8 @@
 
 //GameObjects
 #include "Ball.h"
-#include "SimplePlaneCollider.h"
+#include "Cube.h"
+#include "Ground.h"
 
 class SceneExample : public BaseScene
 {
@@ -38,7 +39,6 @@ public:
 	void Update(double dt);
 	void Render();
 	void Exit();
-	void cleanup();
 	void InitLights();
 
 private:
@@ -57,7 +57,11 @@ private:
 	//Game objects
 	Ball* balls[50];
 	float ballCD;
-	SimplePlaneCollider* groundHitbox;
+
+	Ground* ground;
+
+	Cube* cubes[50];
+	float cubeCD;
 };
 
 #endif

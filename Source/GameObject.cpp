@@ -41,6 +41,21 @@ void GameObject::translatePosition(AXIS axis, int value)
     }
 }
 
+void GameObject::translateObject(Vector3 Position)
+{
+    position += Position;
+}
+
+void GameObject::translateObject(glm::vec3 Position)
+{
+    position += Position;
+}
+
+void GameObject::setObjectPosition(Vector3 Position)
+{
+    position += Position;
+}
+
 Vector3 GameObject::getRotation() const
 {
     return rotation;
