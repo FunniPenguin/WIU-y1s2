@@ -7,11 +7,13 @@
 #include "FPCamera.h"
 #include "MatrixStack.h"
 #include "Light.h"
+#include "MusicBuffer.h"
 
 //GameObjects
 #include "Ball.h"
 #include "Cube.h"
 #include "Ground.h"
+#include "Player.h"
 
 class SceneExample : public BaseScene
 {
@@ -28,6 +30,7 @@ public:
 		GEO_BOTTOM,
 		GEO_FRONT,
 		GEO_BACK,
+		GEO_TEXTBOX,
 		GEO_TEXT,
 		NUM_GEOMETRY,
 	};
@@ -42,6 +45,7 @@ public:
 	void InitLights();
 
 private:
+
 	//Render functions
 	void HandleKeyPress();
 	void RenderSkybox();
@@ -62,6 +66,8 @@ private:
 
 	Cube* cubes[50];
 	float cubeCD;
+
+	Player* player;
 };
 
 #endif

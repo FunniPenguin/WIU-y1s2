@@ -7,6 +7,14 @@
 #include "MatrixStack.h"
 #include "Light.h"
 
+//Game state enum to allow scenes to pause and check inventory
+enum GAME_STATE {
+	RUNNING,
+	PAUSED,
+	INVENTORY,
+	DIALOGUE
+};
+
 class BaseScene //Done by Dylan Yap
 {
 public:
@@ -134,7 +142,7 @@ public:
 	virtual void Update(double dt) = 0;
 	virtual void Render() = 0;
 	virtual void Exit();
-	void HandleKeyPress();
+	virtual void HandleKeyPress();
 	void RenderMesh(Mesh* mesh, bool enableLight);
 	void RenderMeshOnScreen(Mesh* mesh, float x, float y, float sizex, float sizey);
 	void RenderText(Mesh* mesh, std::string text, glm::vec3 color);
@@ -142,6 +150,9 @@ public:
 	unsigned m_vertexArrayID;
 	unsigned m_programID;
 	unsigned m_parameters[U_TOTAL];
+
+	//Allows the scene to switch to pause state and inventory
+	GAME_STATE currGameState; //Technically would not need to use in UI only scenes
 
 	//AltAzCamera camera;
 	FPCamera camera;

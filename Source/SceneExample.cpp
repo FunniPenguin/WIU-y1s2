@@ -17,6 +17,7 @@
 #include "KeyboardController.h"
 #include "LoadTGA.h"
 #include "SceneManager.h"
+#include "SoundManager.h"
 
 //Physics functions
 #include "CollisionDetection.h"
@@ -49,9 +50,6 @@ void SceneExample::Init()
 	//Initialise the lights in a function so that code is more organised
 	InitLights();
 
-	// Initialise camera properties
-	camera.Init(glm::vec3(4, 3, 3), glm::vec3(0, 0, 0));
-
 	// Init VBO here
 	for (int i = 0; i < NUM_GEOMETRY; ++i)
 	{
@@ -63,6 +61,8 @@ void SceneExample::Init()
 	meshList[GEO_CUBE] = MeshBuilder::GenerateCube("Cube", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_PLANE] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_PLANE]->textureID = LoadTGA("Images//ground.tga");
+	meshList[GEO_TEXTBOX] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 1.f);
+	meshList[GEO_TEXTBOX]->textureID = LoadTGA("Images//textBox.tga");
 
 	//Generate skybox
 	meshList[GEO_LEFT] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 200.f);
@@ -91,6 +91,7 @@ void SceneExample::Init()
 	enableLight = true;
 
 	//Game variables
+	currGameState = RUNNING;
 	for (int i = 0; i < 50;i++) {
 		balls[i] = nullptr;
 	}
@@ -100,124 +101,140 @@ void SceneExample::Init()
 	}
 	cubeCD = 0;
 	ground = new Ground(Vector3(0, 0, 0), Vector3(-12.5f, 0, -12.5f), Vector3(12.5f, 0, 12.5f));
+	player = new Player(Vector3(0, 1, 0));
+	// Initialise camera properties
+	camera.Init((player->getPosition() + Vector3{ 1.f, 0.f, 0.f }).convert2glm(),
+		(player->getPosition() + Vector3{ 2.f, 0.f, 0.f }).convert2glm());
+	player->add2Inventory("sup bro");
 }
 
 void SceneExample::Update(double dt)
 {
 	HandleKeyPress();
-	if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
-		SceneManager::GetInstance().LoadScene(SCENE_START);
-		return;
-	}
-
-	ballCD -= dt;
-	cubeCD -= dt;
-
-	if (KeyboardController::GetInstance()->IsKeyDown('I'))
-		light[0].position.z -= static_cast<float>(dt) * 5.f;
-	if (KeyboardController::GetInstance()->IsKeyDown('K'))
-		light[0].position.z += static_cast<float>(dt) * 5.f;
-	if (KeyboardController::GetInstance()->IsKeyDown('J'))
-		light[0].position.x -= static_cast<float>(dt) * 5.f;
-	if (KeyboardController::GetInstance()->IsKeyDown('L'))
-		light[0].position.x += static_cast<float>(dt) * 5.f;
-	if (KeyboardController::GetInstance()->IsKeyDown('O'))
-		light[0].position.y -= static_cast<float>(dt) * 5.f;
-	if (KeyboardController::GetInstance()->IsKeyDown('P'))
-		light[0].position.y += static_cast<float>(dt) * 5.f;
-
-	if (KeyboardController::GetInstance()->IsKeyPressed('B') && (ballCD <= 0.f)) {
-		for (int i = 0; i < 50;i++) {
-			if (balls[i] == nullptr) {
-				balls[i] = new Ball{Vector3(0, 10, 0), 1, 20};
-				ballCD = 0.5f;
-				break;
+	if (currGameState == RUNNING) {
+		if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
+			SceneManager::GetInstance().LoadScene(SCENE_START);
+			return;
+		}
+		if (KeyboardController::GetInstance()->IsKeyPressed('E')) {
+			//std::cout << "Player position: " << player->getPosition().x << "|" << player->getPosition().y << "|" << player->getPosition().z << std::endl;
+			player->add2Inventory("grass");
+		}
+		if (KeyboardController::GetInstance()->IsKeyPressed('R')) {
+			for (int i = 0; i < player->getInventory().size(); i++) {
+				std::cout << player->getInventory()[i].name<< i << ":\n";
+				std::cout << player->getInventory()[i].description << "\n";
 			}
 		}
-	}
-	if (MouseController::GetInstance()->IsButtonPressed(0) && (ballCD <= 0.f)) {
-		for (int i = 0; i < 50; i++) {
-			if (balls[i] == nullptr) {
-				balls[i] = new Ball{ camera.position, 1, 20 };
-				balls[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
-				ballCD = 0.5f;
-				break;
-			}
-		}
-	}
-	
-	for (int i = 0; i < 50; i++) {
-		if (balls[i] != nullptr) {
-			OverlapSphere2Plane(*balls[i], balls[i]->getHitbox(), ground->getHitbox());
-			for (int j = i + 1; j < 50; j++) {
-				if (balls[j] != nullptr) {
-					CollisionData cd;
-					if (OverlapSphere2Sphere(*balls[i], balls[i]->getHitbox().getRadius(), *balls[j], balls[j]->getHitbox().getRadius(), cd))
-						ResolveCollision(cd);
+
+		ballCD -= dt;
+		cubeCD -= dt;
+
+		if (KeyboardController::GetInstance()->IsKeyPressed('B') && (ballCD <= 0.f)) {
+			for (int i = 0; i < 50; i++) {
+				if (balls[i] == nullptr) {
+					balls[i] = new Ball{ Vector3(0, 10, 0), 1, 20 };
+					ballCD = 0.5f;
+					break;
 				}
 			}
-			balls[i]->UpdatePhysics(dt);
-			if ((balls[i]->getPosition().x > 50) || (balls[i]->getPosition().x < -50) ||
-				(balls[i]->getPosition().y > 50) || (balls[i]->getPosition().y < -50) ||
-				(balls[i]->getPosition().z > 50) || (balls[i]->getPosition().z < -50)) {
-				delete balls[i];
-				balls[i] = nullptr;
+		}
+		if (MouseController::GetInstance()->IsButtonPressed(0) && (ballCD <= 0.f)) {
+			for (int i = 0; i < 50; i++) {
+				if (balls[i] == nullptr) {
+					balls[i] = new Ball{ camera.position, 1, 20 };
+					balls[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
+					ballCD = 0.5f;
+					break;
+				}
 			}
 		}
-	}
-
-	if (KeyboardController::GetInstance()->IsKeyPressed('C') && (cubeCD <= 0.f)) {
+		CollisionData cd;
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//                                                  Ball collisions                                                   //
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		for (int i = 0; i < 50; i++) {
-			if (cubes[i] == nullptr) {
-				cubes[i] = new Cube{ Vector3(0, 10, 0), 20, 1, 1, 1 };
-				cubeCD = 0.5f;
-				break;
-			}
-		}
-	}
-	if (MouseController::GetInstance()->IsButtonPressed(1) && (cubeCD <= 0.f)) {
-		for (int i = 0; i < 50; i++) {
-			if (cubes[i] == nullptr) {
-				cubes[i] = new Cube{ camera.position, 1, 2, 2, 2 };
-				cubes[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
-				cubeCD = 0.5f;
-				break;
-			}
-		}
-	}
-	for (int i = 0; i < 50; i++) {
-		if (cubes[i] != nullptr) {
-			std::cout << "Cube " << i << " Mass: " << cubes[i]->getMass() << std::endl;
-			CollisionData cd;
-			if (OverlapSimpleCube2Plane(*cubes[i], cubes[i]->getHitbox(), *ground, ground->getHitbox(), cd))
-				ResolveCollision(cd);
-			for (int j = 0; j < 50; j++) {
-				if (balls[j] != nullptr) {
-					if (OverlapSphere2Cube(*balls[j], balls[j]->getHitbox(), *cubes[i], cubes[i]->getHitbox(), cd))
-					{
-						ResolveCollision(cd);
+			if (balls[i] != nullptr) {
+				OverlapSphere2Ground(*balls[i], balls[i]->getHitbox().getRadius(), 0.f);
+				if (OverlapSphere2Cube(*balls[i], balls[i]->getHitbox(), *player, player->getHitbox(), cd)) {
+					ResolveCollision(cd);
+				}
+				for (int j = i + 1; j < 50; j++) {
+					if (balls[j] != nullptr) {
+						if (OverlapSphere2Sphere(*balls[i], balls[i]->getHitbox().getRadius(), *balls[j], balls[j]->getHitbox().getRadius(), cd))
+							ResolveCollision(cd);
 					}
 				}
-			}
-			for (int j = i + 1; j < 50; j++) {
-				if (cubes[j] != nullptr) {
-					CollisionData cd;
-					if (OverlapCube2Cube(*cubes[i], cubes[i]->getHitbox(), *cubes[j], cubes[j]->getHitbox(), cd))
-						ResolveCollision(cd);
+				balls[i]->UpdatePhysics(dt);
+				if ((balls[i]->getPosition().x > 12.5) || (balls[i]->getPosition().x < -12.5) ||
+					(balls[i]->getPosition().y > 12.5) ||
+					(balls[i]->getPosition().z > 12.5) || (balls[i]->getPosition().z < -12.5)) {
+					delete balls[i];
+					balls[i] = nullptr;
 				}
 			}
-			cubes[i]->UpdatePhysics(dt);
-			if ((cubes[i]->getPosition().x > 50) || (cubes[i]->getPosition().x < -50) ||
-				(cubes[i]->getPosition().y > 50) || (cubes[i]->getPosition().y < -50) ||
-				(cubes[i]->getPosition().z > 50) || (cubes[i]->getPosition().z < -50)) {
-				delete cubes[i];
-				cubes[i] = nullptr;
+		}
+
+		if (KeyboardController::GetInstance()->IsKeyPressed('C') && (cubeCD <= 0.f)) {
+			for (int i = 0; i < 50; i++) {
+				if (cubes[i] == nullptr) {
+					cubes[i] = new Cube{ Vector3(0, 10, 0), 20, 1, 1, 1 };
+					cubeCD = 0.5f;
+					break;
+				}
 			}
 		}
+		if (MouseController::GetInstance()->IsButtonPressed(1) && (cubeCD <= 0.f)) {
+			for (int i = 0; i < 50; i++) {
+				if (cubes[i] == nullptr) {
+					cubes[i] = new Cube{ camera.position, 20, 1, 1, 1 };
+					cubes[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
+					cubeCD = 0.5f;
+					break;
+				}
+			}
+		}
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//                                                  Cube collisions                                                   //
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		for (int i = 0; i < 50; i++) {
+			if (cubes[i] != nullptr) {
+				OverlapCube2Ground(*cubes[i], cubes[i]->getHitbox(), 0.f);
+				if (OverlapCube2Cube(*cubes[i], cubes[i]->getHitbox(), *player, player->getHitbox(), cd)) {
+					ResolveCollision(cd);
+				}
+				for (int j = 0; j < 50; j++) {
+					if (balls[j] != nullptr) {
+						if (OverlapSphere2Cube(*balls[j], balls[j]->getHitbox(), *cubes[i], cubes[i]->getHitbox(), cd))
+						{
+							ResolveCollision(cd);
+						}
+					}
+				}
+				for (int j = i + 1; j < 50; j++) {
+					if (cubes[j] != nullptr) {
+						if (OverlapCube2Cube(*cubes[i], cubes[i]->getHitbox(), *cubes[j], cubes[j]->getHitbox(), cd))
+							ResolveCollision(cd);
+					}
+				}
+				cubes[i]->UpdatePhysics(dt);
+				if ((cubes[i]->getPosition().x > 12.5) || (cubes[i]->getPosition().x < -12.5) ||
+					(cubes[i]->getPosition().y > 12.5) ||
+					(cubes[i]->getPosition().z > 12.5) || (cubes[i]->getPosition().z < -12.5)) {
+					delete cubes[i];
+					cubes[i] = nullptr;
+				}
+			}
+		}
+		player->movePlayer(dt, camera);
+		//std::cout << player->getPosition().x << "|" << player->getPosition().y << "|" << player->getPosition().z << "|" << std::endl;
+		player->UpdatePhysics(dt, camera);
+		camera.Update(dt);
+		if (!(SoundManager::GetInstance().getBgm(1).isPlaying()))
+			SoundManager::GetInstance().getBgm(1).Play();
+		SoundManager::GetInstance().UpdateBgmMusicBuffer(dt);
 	}
-
-	camera.Update(dt);
-
+	
 }
 
 void SceneExample::Render()
@@ -269,6 +286,7 @@ void SceneExample::Render()
 	RenderMesh(meshList[GEO_SPHERE], false);
 	modelStack.PopMatrix();
 
+	//Render balls
 	for (int i = 0; i < 50; i++) {
 		if (balls[i] != nullptr) {
 			modelStack.PushMatrix();
@@ -278,15 +296,31 @@ void SceneExample::Render()
 			modelStack.PopMatrix();
 		}
 	}
+	
+	//Render cubes
 	for (int i = 0; i < 50; i++) {
 		if (cubes[i] != nullptr) {
 			modelStack.PushMatrix();
 			modelStack.Translate(cubes[i]->getPosition().x, cubes[i]->getPosition().y, cubes[i]->getPosition().z);
-			modelStack.Scale(2, 2, 2);
+			modelStack.Scale(cubes[i]->getHitbox().getHalfDimensions().x * 2, cubes[i]->getHitbox().getHalfDimensions().y * 2, cubes[i]->getHitbox().getHalfDimensions().z * 2);
 			RenderMesh(meshList[GEO_CUBE], false);
 			modelStack.PopMatrix();
 		}
 	}
+
+	//Player
+	if (camera.cameraState != FIRST_PERSON) {
+		modelStack.PushMatrix();
+		modelStack.Translate(player->getPosition().x, player->getPosition().y, player->getPosition().z);
+		meshList[GEO_PLANE]->material.kAmbient = glm::vec3(0.5, 0.7, 0.5);
+		meshList[GEO_PLANE]->material.kDiffuse = glm::vec3(1, 1, 1);
+		meshList[GEO_PLANE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+		meshList[GEO_PLANE]->material.kShininess = 1.0f;
+		modelStack.Scale(player->getHitbox().getHalfDimensions().x * 2, player->getHitbox().getHalfDimensions().y * 2, player->getHitbox().getHalfDimensions().z * 2);
+		RenderMesh(meshList[GEO_CUBE], false);
+		modelStack.PopMatrix();
+	}
+
 	modelStack.PushMatrix();
 	modelStack.Rotate(-90, 1, 0, 0);
 	modelStack.Scale(25.f, 25.f, 1.f);
@@ -296,6 +330,13 @@ void SceneExample::Render()
 	meshList[GEO_PLANE]->material.kShininess = 1.0f;
 	RenderMesh(meshList[GEO_PLANE], true);
 	modelStack.PopMatrix();
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//                                                For Inventory Render                                                //
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	if (currGameState == INVENTORY) {
+		RenderMeshOnScreen(meshList[GEO_TEXTBOX], 400, 200, 100, 100);
+	}
 }
 
 void SceneExample::Exit()
@@ -313,6 +354,9 @@ void SceneExample::Exit()
 		if (cubes[i] != nullptr) {
 			delete cubes[i];
 		}
+	}
+	if (player != nullptr) {
+		delete player;
 	}
 	// Cleanup VBO here
 	for (int i = 0; i < NUM_GEOMETRY; ++i)
@@ -366,7 +410,30 @@ void SceneExample::HandleKeyPress()
 			light[0].power = 0.1f;
 		glUniform1f(m_parameters[U_LIGHT0_POWER], light[0].power);
 	}
-
+	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_ENTER))
+	{
+		// Change camera type
+		if (camera.cameraState == FIRST_PERSON) {
+			camera.target = player->getPosition().convert2glm();
+			camera.cameraState = THIRD_PERSON;
+		}
+		else if (camera.cameraState == THIRD_PERSON) {
+			//Vector3 cameraOffset{ player->getPosition().Normalize().x, 0, player->getPosition().Normalize().z };
+			camera.position = (player->getPosition()).convert2glm();
+			camera.target = (player->getPosition() + Vector3{ 0.f, 0.f, 1.f }).convert2glm();
+			camera.cameraState = FIRST_PERSON;
+		}
+	}
+	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_I))
+	{
+		// Load the inventory
+		if (currGameState == RUNNING) {
+			currGameState = INVENTORY;
+		}
+		else if (currGameState == INVENTORY) {
+			currGameState = RUNNING;
+		}
+	}
 	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_TAB))
 	{
 		if (light[0].type == Light::LIGHT_POINT) {
