@@ -98,8 +98,13 @@ void SceneBalloonPop::Init()
 	meshList[GEO_DART] = MeshBuilder::GenerateOBJMTL("dart", "Models//dart.obj", "Models//dart.mtl");
 	meshList[GEO_DART]->textureID = LoadTGA("Images//dart.tga");
 
-	meshList[GEO_TABLE] = MeshBuilder::GenerateOBJMTL("dart", "Models//table.obj", "Models//table.mtl");
-	meshList[GEO_TABLE]->textureID = LoadTGA("Images//table.tga");
+	meshList[GEO_DOORWAY] = MeshBuilder::GenerateOBJMTL("doorway", "Models//doorway.obj", "Models//doorway.mtl");
+	meshList[GEO_DOORWAY]->textureID = LoadTGA("Images//doorway.tga");
+
+	meshList[GEO_RGATE] = MeshBuilder::GenerateOBJMTL("rgate", "Models//rgate.obj", "Models//rgate.mtl");
+	meshList[GEO_RGATE]->textureID = LoadTGA("Images//gate.tga");
+	meshList[GEO_LGATE] = MeshBuilder::GenerateOBJMTL("lgate", "Models//lgate.obj", "Models//lgate.mtl");
+	meshList[GEO_LGATE]->textureID = LoadTGA("Images//gate.tga");
 
 	meshList[GEO_TEST] = MeshBuilder::GenerateOBJMTL("test", "Models//scarecrow.obj", "Models//scarecrow.mtl");
 	meshList[GEO_TEST]->textureID = LoadTGA("Images//scarecrowpng.tga");
@@ -142,38 +147,67 @@ void SceneBalloonPop::Init()
 	player = new Player(Vector3(23.5, 10, 0));
 	camera.Init((player->getPosition() + Vector3{ 1.f, 0.f, 0.f }).convert2glm(),
 		(player->getPosition() + Vector3{ 2.f, 0.f, 0.f }).convert2glm());
-	for (int i = 0; i < 10; i++) 
-		trees[i] = new Tree(Vector3(50 - i * 10, 0, 50), 1.f, 0);
-	for (int i = 0; i < 10; i++)
-		trees[i + 10] = new Tree(Vector3(50 - i * 10, 0, -50), 1.f, 0);
-		trees[20] = new Tree(Vector3(50, 0, 50), 1.f, 0);
-		trees[21] = new Tree(Vector3(50, 0, 40), 1.f, 0);
-		trees[22] = new Tree(Vector3(50, 0, 30), 1.f, 0);
-		trees[23] = new Tree(Vector3(50, 0, 20), 1.f, 0);
-		trees[24] = new Tree(Vector3(50, 0, 10), 1.f, 0);
-		trees[25] = new Tree(Vector3(50, 0, -10), 1.f, 0);
-		trees[26] = new Tree(Vector3(50, 0, -20), 1.f, 0);
-		trees[27] = new Tree(Vector3(50, 0, -30), 1.f, 0);
-		trees[28] = new Tree(Vector3(50, 0, -40), 1.f, 0);
-		trees[29] = new Tree(Vector3(50, 0, -50), 1.f, 0);
-	for (int i = 0; i < 10; i++)
-		trees[i + 30] = new Tree(Vector3(-50, 0, 40 - i * 10), 1.f, 0);
 
-	for (int i = 0; i < 9; i++)
-		trees[i + 40] = new Tree(Vector3(45 - i * 10, 0, 45), 1.f, 0);
-	for (int i = 0; i < 9; i++)
-		trees[i + 50] = new Tree(Vector3(45 - i * 10, 0, -45), 1.f, 0);
-	trees[60] = new Tree(Vector3(45, 0, 45), 1.f, 0);
-	trees[61] = new Tree(Vector3(45, 0, 35), 1.f, 0);
-	trees[62] = new Tree(Vector3(45, 0, 25), 1.f, 0);
-	trees[63] = new Tree(Vector3(45, 0, 15), 1.f, 0);
-	trees[64] = new Tree(Vector3(45, 0, -15), 1.f, 0);
-	trees[65] = new Tree(Vector3(45, 0, -25), 1.f, 0);
-	trees[66] = new Tree(Vector3(45, 0, -35), 1.f, 0);
-	trees[67] = new Tree(Vector3(45, 0, -45), 1.f, 0);
-	for (int i = 0; i < 9; i++)
-		trees[i + 70] = new Tree(Vector3(-45, 0, 45 - i * 10), 1.f, 0);
+	//outer ring of trees
+	for (int i = 0; i < 11; i++) 
+		trees[i] = new Tree(Vector3(100 - i * 20, 0, 100), 1.f, 0);
+	for (int i = 0; i < 11; i++)
+		trees[i + 11] = new Tree(Vector3(100 - i * 20, 0, -100), 1.f, 0);
+	for (int i = 0; i < 4; i++)
+		trees[i + 22] = new Tree(Vector3(100, 0, 80 - i * 20), 1.f, 0);
+	for (int i = 0; i < 4; i++)
+		trees[i + 26] = new Tree(Vector3(100, 0, -80 + i * 20), 1.f, 0);
+	for (int i = 0; i < 4; i++)
+		trees[i + 30] = new Tree(Vector3(-100, 0, 80 - i * 20), 1.f, 0);
+	for (int i = 0; i < 4; i++)
+		trees[i + 34] = new Tree(Vector3(-100, 0, -80 + i * 20), 1.f, 0);
+
+	// inner ring of trees
+	for (int i = 0; i < 10; i++)
+		trees[i + 38] = new Tree(Vector3(90 - i * 20, 0, 90), 1.f, 0);
+	for (int i = 0; i < 10; i++)
+		trees[i + 48] = new Tree(Vector3(90 - i * 20, 0, -90), 1.f, 0);
+	for (int i = 0; i < 3; i++)
+		trees[i + 58] = new Tree(Vector3(90, 0, 70 - i * 20), 1.f, 0);
+	for (int i = 0; i < 3; i++)
+		trees[i + 61] = new Tree(Vector3(90, 0, -70 + i * 20), 1.f, 0);
+	for (int i = 0; i < 3; i++)
+		trees[i + 64] = new Tree(Vector3(-90, 0, 70 - i * 20), 1.f, 0);
+	for (int i = 0; i < 3; i++)
+		trees[i + 67] = new Tree(Vector3(-90, 0, -70 + i * 20), 1.f, 0);
+	 
 	
+	//for (int i = 0; i < 10; i++)
+	//	trees[i + 10] = new Tree(Vector3(50 - i * 10, 0, -50), 1.f, 0);
+	//	trees[20] = new Tree(Vector3(50, 0, 50), 1.f, 0);
+	//	trees[21] = new Tree(Vector3(50, 0, 40), 1.f, 0);
+	//	trees[22] = new Tree(Vector3(50, 0, 30), 1.f, 0);
+	//	trees[23] = new Tree(Vector3(50, 0, 20), 1.f, 0);
+	//	trees[24] = new Tree(Vector3(50, 0, 10), 1.f, 0);
+	//	trees[25] = new Tree(Vector3(50, 0, -10), 1.f, 0);
+	//	trees[26] = new Tree(Vector3(50, 0, -20), 1.f, 0);
+	//	trees[27] = new Tree(Vector3(50, 0, -30), 1.f, 0);
+	//	trees[28] = new Tree(Vector3(50, 0, -40), 1.f, 0);
+	//	trees[29] = new Tree(Vector3(50, 0, -50), 1.f, 0);
+	//for (int i = 0; i < 10; i++)
+	//	trees[i + 30] = new Tree(Vector3(-50, 0, 40 - i * 10), 1.f, 0);
+
+	//for (int i = 0; i < 9; i++)
+	//	trees[i + 40] = new Tree(Vector3(45 - i * 10, 0, 45), 1.f, 0);
+	//for (int i = 0; i < 9; i++)
+	//	trees[i + 50] = new Tree(Vector3(45 - i * 10, 0, -45), 1.f, 0);
+	//trees[60] = new Tree(Vector3(45, 0, 45), 1.f, 0);
+	//trees[61] = new Tree(Vector3(45, 0, 35), 1.f, 0);
+	//trees[62] = new Tree(Vector3(45, 0, 25), 1.f, 0);
+	//trees[63] = new Tree(Vector3(45, 0, 15), 1.f, 0);
+	//trees[64] = new Tree(Vector3(45, 0, -15), 1.f, 0);
+	//trees[65] = new Tree(Vector3(45, 0, -25), 1.f, 0);
+	//trees[66] = new Tree(Vector3(45, 0, -35), 1.f, 0);
+	//trees[67] = new Tree(Vector3(45, 0, -45), 1.f, 0);
+	//for (int i = 0; i < 9; i++)
+	//	trees[i + 70] = new Tree(Vector3(-45, 0, 45 - i * 10), 1.f, 0);
+	// 
+	// this tree generation code sucks ass
 }
 
 void SceneBalloonPop::Update(double dt)
@@ -188,25 +222,25 @@ void SceneBalloonPop::Update(double dt)
 	}
 	
 	// handle outer collision
-		if (player->getPosition().x > 40) {
-			player->setObjectPosition(glm::vec3(40, player->getPosition().y, player->getPosition().z));
+		if (player->getPosition().x > 80) {
+			player->setObjectPosition(glm::vec3(80, player->getPosition().y, player->getPosition().z));
 			camera.position.x = player->getPosition().x;
 		}
-		if (player->getPosition().x < -40) {
-			player->setObjectPosition(glm::vec3(-40, player->getPosition().y, player->getPosition().z));
+		if (player->getPosition().x < -80) {
+			player->setObjectPosition(glm::vec3(-80, player->getPosition().y, player->getPosition().z));
 			camera.position.x = player->getPosition().x;
 		}
-		if (player->getPosition().z > 40) {
-			player->setObjectPosition(glm::vec3(player->getPosition().x, player->getPosition().y, 40));
+		if (player->getPosition().z > 80) {
+			player->setObjectPosition(glm::vec3(player->getPosition().x, player->getPosition().y, 80));
 			camera.position.z = player->getPosition().z;
 		}
-		if (player->getPosition().z < -40) {
-			player->setObjectPosition(glm::vec3(player->getPosition().x, player->getPosition().y, -40));
+		if (player->getPosition().z < -80) {
+			player->setObjectPosition(glm::vec3(player->getPosition().x, player->getPosition().y, -80));
 			camera.position.z = player->getPosition().z;
 		}
 	
 	// if win, can leave
-	if (KeyboardController::GetInstance()->IsKeyPressed('Q') && balloonpopVictory == true && player->getPosition().x < 45 && player->getPosition().x > 35 && player->getPosition().z < 5 && player->getPosition().z > -5) {
+	if (KeyboardController::GetInstance()->IsKeyPressed('E') && balloonpopVictory == true && player->getPosition().x < -75 && player->getPosition().x > -85 && player->getPosition().z < 5 && player->getPosition().z > -5) {
 		SceneManager::GetInstance().LoadScene(SCENE_BALLOONPOP);  	// CHANGE TO WHATEVER SCENE YOU WANT NEXT
 		return;
 	}
@@ -229,8 +263,7 @@ void SceneBalloonPop::Update(double dt)
 		return;
 	}
 
-	ballCD -= dt;
-	cubeCD -= dt;
+	dartCD -= dt;
 
 	if (KeyboardController::GetInstance()->IsKeyDown('I'))
 		light[0].position.z -= static_cast<float>(dt) * 5.f;
@@ -244,36 +277,36 @@ void SceneBalloonPop::Update(double dt)
 		light[0].position.y -= static_cast<float>(dt) * 5.f;
 	if (KeyboardController::GetInstance()->IsKeyDown('P'))
 		light[0].position.y += static_cast<float>(dt) * 5.f;
-	if (MouseController::GetInstance()->IsButtonPressed(0) && (ballCD <= 0.f) && gameStart == true) {
+	if (MouseController::GetInstance()->IsButtonPressed(0) && (dartCD <= 0.f) && gameStart == true) {
 		if (power < 100) {
 			power++;
 		}
 	}
-	if (MouseController::GetInstance()->IsButtonReleased(0) && (ballCD <= 0.f) && gameStart == true) {
+	if (MouseController::GetInstance()->IsButtonReleased(0) && (dartCD <= 0.f) && gameStart == true) {
 		for (int i = 0; i < 50; i++) {
-			if (balls[i] == nullptr) {
-				balls[i] = new Ball{ camera.position, 0.5, 10 };
-				balls[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * power);
-				ballCD = 0.3f;
+			if (darts[i] == nullptr) {
+				darts[i] = new Dart{ camera.position, 0.5, 10 };
+				darts[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * power);
+				dartCD = 1.f;
 				power = 0;
 				break;
 			}
 		}
 	}
 	for (int i = 0; i < 50; i++) {
-		if (balls[i] != nullptr) {
+		if (darts[i] != nullptr) {
 			// ball collision
-			OverlapSphere2Ground(*balls[i], balls[i]->getHitbox().getRadius(), 00);
+			OverlapSphere2Ground(*darts[i], darts[i]->getHitbox().getRadius(), 00);
 			for (int i = 0; i < 50; i++) {
-				if (balls[i] != nullptr) {
+				if (darts[i] != nullptr) {
 					for (int j = 0; j < 21; j++) {
 						if (eyeballs[j] != nullptr) {
 							CollisionData cd;
-							if (OverlapSphere2Sphere(*balls[i], balls[i]->getHitbox().getRadius(), *eyeballs[j], eyeballs[j]->getHitbox().getRadius(), cd)) {
+							if (OverlapSphere2Sphere(*darts[i], darts[i]->getHitbox().getRadius(), *eyeballs[j], eyeballs[j]->getHitbox().getRadius(), cd)) {
 								delete eyeballs[j];
 								eyeballs[j] = nullptr;
-								delete balls[i];
-								balls[i] = nullptr;
+								delete darts[i];
+								darts[i] = nullptr;
 								popcount++;
 								break;
 							}
@@ -301,17 +334,17 @@ void SceneBalloonPop::Update(double dt)
 				}
 			}
 			for (int i = 0; i < 50; i++) {
-				if (balls[i] != nullptr) {
-					balls[i]->UpdatePhysics(dt);
+				if (darts[i] != nullptr) {
+					darts[i]->UpdatePhysics(dt);
 				}
 			}
 			for (int i = 0; i < 50; i++) {
-				if (balls[i] != nullptr) {
-					if ((balls[i]->getPosition().x > 50) || (balls[i]->getPosition().x < -50) ||
-						(balls[i]->getPosition().y > 50) || (balls[i]->getPosition().y < 1) ||
-						(balls[i]->getPosition().z > 50) || (balls[i]->getPosition().z < -50)) {
-						delete balls[i];
-						balls[i] = nullptr;
+				if (darts[i] != nullptr) {
+					if ((darts[i]->getPosition().x > 50) || (darts[i]->getPosition().x < -50) ||
+						(darts[i]->getPosition().y > 50) || (darts[i]->getPosition().y < 1) ||
+						(darts[i]->getPosition().z > 50) || (darts[i]->getPosition().z < -50)) {
+						delete darts[i];
+						darts[i] = nullptr;
 					}
 				}
 			}
@@ -322,9 +355,15 @@ void SceneBalloonPop::Update(double dt)
 	player->UpdatePhysics(dt, camera);
 	camera.Update(dt);
 
+	// gates swing open when you approach if game is cleared
+	if (balloonpopVictory == false) {
+		if (player->getPosition().x < -50 && gaterotate < 40) {
+			gaterotate += dt * 30;
+		}
+	}
+
 	if (gameStart == true)
 		time -= dt;
-
 }
 
 void SceneBalloonPop::Render()
@@ -381,10 +420,10 @@ void SceneBalloonPop::Render()
 	meshList[GEO_DART]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
 	meshList[GEO_DART]->material.kShininess = 1.0f;
 	for (int i = 0; i < 50; i++) {
-		if (balls[i] != nullptr) {
+		if (darts[i] != nullptr) {
 			modelStack.PushMatrix();
 			//modelStack.Rotate(-90, 0, 1, 0);
-			modelStack.Translate(balls[i]->getPosition().x, balls[i]->getPosition().y, balls[i]->getPosition().z);
+			modelStack.Translate(darts[i]->getPosition().x, darts[i]->getPosition().y, darts[i]->getPosition().z);
 			modelStack.Scale(0.3f, 0.3f, 0.3f);
 			RenderMesh(meshList[GEO_DART], true);
 			modelStack.PopMatrix();
@@ -400,12 +439,12 @@ void SceneBalloonPop::Render()
 		}
 	}
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 5; i++)
 	{
-		for (int j = 0; j < 3; j++)
+		for (int j = 0; j < 5; j++)
 		{
 			modelStack.PushMatrix();
-			modelStack.Translate(50.f - 50 * i, 0.f, 50.f - 50 * j);
+			modelStack.Translate(100.f - 50 * i, 0.f, 100.f - 50 * j);
 			modelStack.Rotate(-90, 1, 0, 0);
 			modelStack.Scale(50.f, 50.f, 1.f);
 			meshList[GEO_PLANE]->material.kAmbient = glm::vec3(0.1, 0.1, 0.1);
@@ -422,7 +461,7 @@ void SceneBalloonPop::Render()
 		if (trees[i] != nullptr) {
 			modelStack.PushMatrix();
 			modelStack.Translate(trees[i]->getPosition().x, trees[i]->getPosition().y, trees[i]->getPosition().z);
-			modelStack.Scale(10.f, 15.f, 10.f);
+			modelStack.Scale(20.f, 30.f, 20.f);
 			meshList[GEO_TREE]->material.kAmbient = glm::vec3(0.001, 0.001, 0.001);
 			meshList[GEO_TREE]->material.kDiffuse = glm::vec3(1, 1, 1);
 			meshList[GEO_TREE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
@@ -440,6 +479,39 @@ void SceneBalloonPop::Render()
 	meshList[GEO_STALL]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
 	meshList[GEO_STALL]->material.kShininess = 1.0f;
 	RenderMesh(meshList[GEO_STALL], true);
+	modelStack.PopMatrix();
+
+	modelStack.PushMatrix();
+	modelStack.Translate(-90.f, 0.f, 0.f);
+	modelStack.Rotate(90, 0, 1, 0);
+	modelStack.Scale(6.5f, 3.5f, 6.5f);
+	meshList[GEO_DOORWAY]->material.kAmbient = glm::vec3(0.1, 0.1, 0.1);
+	meshList[GEO_DOORWAY]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_DOORWAY]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_DOORWAY]->material.kShininess = 1.0f;
+	RenderMesh(meshList[GEO_DOORWAY], true);
+	modelStack.PopMatrix();
+
+	modelStack.PushMatrix();
+	modelStack.Translate(-90.f, 0.f, 11.f);
+	modelStack.Rotate(90 + gaterotate, 0, 1, 0);
+	modelStack.Scale(10.f, 10.f, 10.f);
+	meshList[GEO_LGATE]->material.kAmbient = glm::vec3(0.1, 0.1, 0.1);
+	meshList[GEO_LGATE]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_LGATE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_LGATE]->material.kShininess = 1.0f;
+	RenderMesh(meshList[GEO_LGATE], true);
+	modelStack.PopMatrix();
+
+	modelStack.PushMatrix();
+	modelStack.Translate(-90.f, 0.f, -11.f);
+	modelStack.Rotate(90 - gaterotate, 0, 1, 0);
+	modelStack.Scale(10.f, 10.f, 10.f);
+	meshList[GEO_RGATE]->material.kAmbient = glm::vec3(0.1, 0.1, 0.1);
+	meshList[GEO_RGATE]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_RGATE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_RGATE]->material.kShininess = 1.0f;
+	RenderMesh(meshList[GEO_RGATE], true);
 	modelStack.PopMatrix();
 
 	meshList[GEO_EYEBALL]->material.kAmbient = glm::vec3(0.1, 0.1, 0.1);
@@ -495,24 +567,24 @@ void SceneBalloonPop::Render()
 	// gamestart prompt
 	if (player->getPosition().x < 5 && player->getPosition().x > -5 && player->getPosition().z < 5 && player->getPosition().z > -5 && gameStart == false) {
 		modelStack.PushMatrix();
-		RenderMeshOnScreen(meshList[GEO_METER2], 400, 200, 1000, 35);
-		modelStack.PopMatrix();
-
-		modelStack.PushMatrix();
-		RenderTextOnScreen(meshList[GEO_TEXT], "Press E to start.", glm::vec3(1.f, 1.f, 1.f), 35, 150, 200);
+		RenderTextOnScreen(meshList[GEO_TEXT], "Press E to start.", glm::vec3(1, 1, 1), 0.5, 20.0f, 10.0f, 10.0f);
 		modelStack.PopMatrix();
 	}
 
 	// leave prompt
-	if (player->getPosition().x < 45 && player->getPosition().x > 35 && player->getPosition().z < 5 && player->getPosition().z > -5 && balloonpopVictory == true) {
-		modelStack.PushMatrix();
-		RenderMeshOnScreen(meshList[GEO_METER2], 400, 200, 1000, 35);
-		modelStack.PopMatrix();
-
-		modelStack.PushMatrix();
-		RenderTextOnScreen(meshList[GEO_TEXT], "Press Q to leave.", glm::vec3(1.f, 1.f, 1.f), 35, 150, 200);
-		modelStack.PopMatrix();
+	if (player->getPosition().x < -75 && player->getPosition().x > -85 && player->getPosition().z < 5 && player->getPosition().z > -5 ) {
+		if (balloonpopVictory == true) {
+			modelStack.PushMatrix();
+			RenderTextOnScreen(meshList[GEO_TEXT], "Press E to leave.", glm::vec3(1, 1, 1), 0.5, 20.0f, 10.0f, 10.0f);
+			modelStack.PopMatrix();
+		}
+		if (balloonpopVictory == false) {
+			modelStack.PushMatrix();
+			RenderTextOnScreen(meshList[GEO_TEXT], "The gates won't budge...", glm::vec3(1, 1, 1), 0.5, 20.0f, 10.0f, 10.0f);
+			modelStack.PopMatrix();
+		}
 	}
+	std::cout << "Player Position: " << player->getPosition().x << " " << player->getPosition().y << " " << player->getPosition().z << std::endl;
 }
 
 void SceneBalloonPop::Exit()
@@ -523,7 +595,7 @@ void SceneBalloonPop::Exit()
 			delete balls[i];
 		}
 	}
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 200; i++) {
 		if (trees[i] != nullptr) {
 			delete trees[i];
 		}
@@ -600,40 +672,6 @@ void SceneBalloonPop::HandleKeyPress()
 		// Change to black background
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	}
-
-	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_0))
-	{
-		// Toggle light on or off
-	/*	enableLight = !enableLight;*/
-
-		if (light[0].power <= 0.1f)
-			light[0].power = 1.f;
-		else
-			light[0].power = 0.1f;
-		glUniform1f(m_parameters[U_LIGHT0_POWER], light[0].power);
-	}
-
-	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_TAB))
-	{
-		if (light[0].type == Light::LIGHT_POINT) {
-			light[0].type = Light::LIGHT_DIRECTIONAL;
-		}
-		else if (light[0].type == Light::LIGHT_DIRECTIONAL) {
-			light[0].type = Light::LIGHT_SPOT;
-		}
-		else {
-			light[0].type = Light::LIGHT_POINT;
-		}
-
-		glUniform1i(m_parameters[U_LIGHT0_TYPE], light[0].type);
-	}
-
-	if (KeyboardController::GetInstance()->IsKeyPressed('Z'))
-	{
-		std::cout << player->getPosition().x << "  " << player->getPosition().y << "  " << player->getPosition().z << std::endl;
-		std::cout << gameStart << std::endl;
-	}
-
 }
 
 void SceneBalloonPop::RenderSkybox()

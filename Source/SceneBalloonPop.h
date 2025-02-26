@@ -39,8 +39,10 @@ public:
 		GEO_METER2,
 		GEO_TIMEBAR,
 		GEO_TEST,
-		GEO_TABLE,
+		GEO_DOORWAY,
 		GEO_TREE,
+		GEO_RGATE,
+		GEO_LGATE,
 		NUM_GEOMETRY,
 	};
 
@@ -77,7 +79,7 @@ private:
 	Cube* cubes[50];
 	float cubeCD;
 	
-	Tree* trees[100];
+	Tree* trees[200];
 
 	Eyeball* eyeballs[21];
 
@@ -86,7 +88,7 @@ private:
 	FPCamera* fpcamera;
 	
 	int power, popcount;
-	float time;
+	float time, gaterotate;
 };
 
 #endif
