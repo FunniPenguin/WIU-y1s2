@@ -1,14 +1,13 @@
-#ifndef SCENE_START_H
-#define SCENE_START_H
+#ifndef SCENE_DEATH_H
+#define SCENE_DEATH_H
 
 #include "BaseScene.h"
 #include "Mesh.h"
 #include "FPCamera.h"
 #include "MatrixStack.h"
 #include "Light.h"
-#include "MusicBuffer.h"
 
-class SceneStart : public BaseScene
+class SceneDeath : public BaseScene
 {
 public:
 	enum GEOMETRY_TYPE
@@ -21,8 +20,8 @@ public:
 		NUM_GEOMETRY,
 	};
 
-	SceneStart() {};
-	~SceneStart() {};
+	SceneDeath() {};
+	~SceneDeath() {};
 
 	void Init();
 	void Update(double dt);
@@ -34,6 +33,7 @@ private:
 	Mesh* meshList[NUM_GEOMETRY];
 	//For the start screen I do not want the objects to have depth so I set projection type to 0
 	int projType = 0; // fix to 0 for orthographic, 1 for projection
+
 	static const int NUM_LIGHTS = 1;
 	Light light[NUM_LIGHTS];
 	bool enableLight;

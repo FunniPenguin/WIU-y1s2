@@ -1,4 +1,4 @@
-#include "SceneStart.h"
+#include "SceneDeath.h"
 #include "GL\glew.h"
 
 // GLM Headers
@@ -16,9 +16,8 @@
 #include "KeyboardController.h"
 #include "LoadTGA.h"
 #include "SceneManager.h"
-#include "SoundManager.h"
 
-void SceneStart::Init()
+void SceneDeath::Init()
 {
 	// Set background color to dark blue
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -58,7 +57,7 @@ void SceneStart::Init()
 	meshList[GEO_SPHERE] = MeshBuilder::GenerateSphere("Sphere", glm::vec3(1.f, 1.f, 1.f), 1.f, 16, 16);
 	meshList[GEO_CUBE] = MeshBuilder::GenerateCube("Cube", glm::vec3(0.5f, 0.5f, 0.5f), 1.f);
 	meshList[GEO_PLANE] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 10.f);
-	meshList[GEO_PLANE]->textureID = LoadTGA("Images//SampleStartScreneWP.tga");
+	meshList[GEO_PLANE]->textureID = LoadTGA("Images//scenedeath.tga");
 
 	// For models with mtl files, put models below the following line
 	Mesh::SetMaterialLoc(m_parameters[U_MATERIAL_AMBIENT], m_parameters[U_MATERIAL_DIFFUSE], m_parameters[U_MATERIAL_SPECULAR],	m_parameters[U_MATERIAL_SHININESS]);
@@ -69,25 +68,22 @@ void SceneStart::Init()
 
 	glm::mat4 projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 1000.0f);
 	projectionStack.LoadMatrix(projection);
+
 	enableLight = false;
-	player = nullptr;
-	//load the starting bgm
-	SoundManager::GetInstance().setBGM(BGM_START);
 }
 
-void SceneStart::Update(double dt)
+void SceneDeath::Update(double dt)
 {
 	HandleKeyPress();
 	if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
-		SceneManager::GetInstance().LoadScene(SCENE_EXAMPLE);
+		SceneManager::GetInstance().LoadScene(SCENE_START);
 		return;
 	}
 	//Since this is the start screen I want the camera to be stationary
 	//camera.Update(dt);
-	SoundManager::GetInstance().updateSounds(dt);
 }
 
-void SceneStart::Render()
+void SceneDeath::Render()
 {
 	// Clear color buffer every frame
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -133,19 +129,10 @@ void SceneStart::Render()
 	//scale, translate, rotate
 	modelStack.Translate(-0.15f, -0.25f, 0.1f);
 	modelStack.Scale(0.025f, 0.05f, 0.05f);
-	
-	RenderText(meshList[GEO_TEXT], "Press Q to start", glm::vec3(1.f, 1.f, 1.f));
-	modelStack.PopMatrix();
 }
 
-void SceneStart::Exit()
+void SceneDeath::Exit()
 {
-	//Handle player
-	if (player != nullptr) {
-		delete player;
-	}
-	//Cleanup sounds
-	SoundManager::GetInstance().stopBGM();
 	// Cleanup VBO here
 	for (int i = 0; i < NUM_GEOMETRY; ++i)
 	{
@@ -158,7 +145,7 @@ void SceneStart::Exit()
 	glDeleteProgram(m_programID);
 }
 
-void SceneStart::HandleKeyPress()
+void SceneDeath::HandleKeyPress()
 {
 	if (KeyboardController::GetInstance()->IsKeyPressed(0x31))
 	{
@@ -181,42 +168,9 @@ void SceneStart::HandleKeyPress()
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //wireframe mode
 	}
 
-	if (KeyboardController::GetInstance()->IsKeyPressed(VK_SPACE))
-	{
-		// Change to black background
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	}
-
-	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_0))
-	{
-		// Toggle light on or off
-	/*	enableLight = !enableLight;*/
-
-		if (light[0].power <= 0.1f)
-			light[0].power = 1.f;
-		else
-			light[0].power = 0.1f;
-		glUniform1f(m_parameters[U_LIGHT0_POWER], light[0].power);
-	}
-
-	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_TAB))
-	{
-		if (light[0].type == Light::LIGHT_POINT) {
-			light[0].type = Light::LIGHT_DIRECTIONAL;
-		}
-		else if (light[0].type == Light::LIGHT_DIRECTIONAL) {
-			light[0].type = Light::LIGHT_SPOT;
-		}
-		else {
-			light[0].type = Light::LIGHT_POINT;
-		}
-
-		glUniform1i(m_parameters[U_LIGHT0_TYPE], light[0].type);
-	}
-
 }
 
-void SceneStart::InitLights()
+void SceneDeath::InitLights()
 {
 	// Get a handle for our "MVP" uniform
 	m_parameters[U_MVP] = glGetUniformLocation(m_programID, "MVP");

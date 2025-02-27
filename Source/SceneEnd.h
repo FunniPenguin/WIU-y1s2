@@ -1,14 +1,16 @@
-#ifndef SCENE_START_H
-#define SCENE_START_H
+#ifndef SCENE_END_H
+#define SCENE_END_H
 
 #include "BaseScene.h"
 #include "Mesh.h"
 #include "FPCamera.h"
 #include "MatrixStack.h"
 #include "Light.h"
-#include "MusicBuffer.h"
 
-class SceneStart : public BaseScene
+//GameObjects
+#include "Player.h"
+
+class SceneEnd : public BaseScene
 {
 public:
 	enum GEOMETRY_TYPE
@@ -16,27 +18,45 @@ public:
 		GEO_AXES,
 		GEO_SPHERE,
 		GEO_CUBE,
+		GEO_QUAD,
 		GEO_PLANE,
+		GEO_GRASSFLOOR,
+		GEO_LEFT,
+		GEO_RIGHT,
+		GEO_TOP,
+		GEO_BOTTOM,
+		GEO_FRONT,
+		GEO_BACK,
+		GEO_TEXTBOX,
 		GEO_TEXT,
 		NUM_GEOMETRY,
 	};
 
-	SceneStart() {};
-	~SceneStart() {};
+	SceneEnd() {};
+	~SceneEnd() {};
 
 	void Init();
 	void Update(double dt);
 	void Render();
 	void Exit();
 	void InitLights();
+
 private:
+	//Render functions
 	void HandleKeyPress();
+	void RenderSkybox();
+	void RenderInventory();
+
+	//meshlist
 	Mesh* meshList[NUM_GEOMETRY];
-	//For the start screen I do not want the objects to have depth so I set projection type to 0
-	int projType = 0; // fix to 0 for orthographic, 1 for projection
+
+	//Light settings
 	static const int NUM_LIGHTS = 1;
 	Light light[NUM_LIGHTS];
 	bool enableLight;
+
+	//Game variables
+	bool playerWin;
 };
 
 #endif

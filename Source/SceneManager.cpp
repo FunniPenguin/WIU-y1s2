@@ -14,6 +14,9 @@
 //Include all the scene files to use here
 #include "SceneStart.h"
 #include "SceneExample.h"
+#include "SceneBallCup.h"
+#include "SceneEnd.h"
+#include "SceneDeath.h"
 
 SceneManager::~SceneManager()
 {
@@ -31,6 +34,9 @@ void SceneManager::InitScene(SCENE_NUM startingSceneNum)
 	//Initiallise all the scenes in the array, just copy and paste and replace with new scene, change the enum
 	Scenes[static_cast<int>(SCENE_START)] = new SceneStart();
 	Scenes[static_cast<int>(SCENE_EXAMPLE)] = new SceneExample();
+	Scenes[static_cast<int>(SCENE_BALLCUP)] = new SceneBallCup();
+	Scenes[static_cast<int>(SCENE_END)] = new SceneEnd();
+	Scenes[static_cast<int>(SCENE_LOSE)] = new SceneDeath();
 	//Initialising the scene num and current scene, do not touch this
 	sceneNum = startingSceneNum;
 	currentScene = Scenes[static_cast<int>(sceneNum)];

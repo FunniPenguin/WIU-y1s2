@@ -2,12 +2,12 @@
 #define BASE_SCENE_H
 
 #include "Mesh.h"
-#include "AltAzCamera.h"
 #include "FPCamera.h"
 #include "MatrixStack.h"
 #include "Light.h"
 
 #include "InteractableObject.h"
+#include "Player.h"
 
 //Game state enum to allow scenes to pause and check inventory
 enum GAME_STATE {
@@ -136,7 +136,7 @@ public:
 		U_TOTAL,
 	};
 
-	BaseScene() {};
+	BaseScene();
 	~BaseScene() {};
 
 	virtual void Init() = 0;
@@ -148,7 +148,7 @@ public:
 	void RenderMesh(Mesh* mesh, bool enableLight);
 	void RenderMeshOnScreen(Mesh* mesh, float x, float y, float sizex, float sizey);
 	void RenderText(Mesh* mesh, std::string text, glm::vec3 color);
-	void RenderTextOnScreen(Mesh* mesh, std::string text, glm::vec3 color, float size, float x, float y);
+	void RenderTextOnScreen(Mesh* mesh, std::string text, glm::vec3 color, float spacing, float size, float x, float y);
 	unsigned m_vertexArrayID;
 	unsigned m_programID;
 	unsigned m_parameters[U_TOTAL];
@@ -165,6 +165,8 @@ public:
 
 	//Constant game variables
 	InteractableObject* currInteraction;
+	float interactionCD;
+	Player* player;
 };
 
 #endif

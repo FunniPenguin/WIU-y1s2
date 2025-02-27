@@ -9,9 +9,14 @@ enum SCENE_NUM {
 	SCENE_START = 0,
 	//Dylan enums
 	SCENE_EXAMPLE,
+	SCENE_BALLCUP,
+	SCENE_END,
 	//Other people enums
+	SCENE_BALLOONPOP,
+	SCENE_LOSE,
 	TOTAL_SCENE //Must be the last enum, do not touch or remove
 };
+
 class SceneManager
 {
 private:

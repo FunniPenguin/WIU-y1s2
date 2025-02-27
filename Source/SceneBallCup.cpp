@@ -1,4 +1,4 @@
-#include "SceneExample.h"
+#include "SceneBallCup.h"
 #include "GL\glew.h"
 
 // GLM Headers
@@ -23,7 +23,12 @@
 //Physics functions
 #include "CollisionDetection.h"
 
-void SceneExample::Init()
+SceneBallCup::SceneBallCup()
+{
+	//TODO: read from save file if 
+}
+
+void SceneBallCup::Init()
 {
 	// Set background color to dark blue
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -61,10 +66,24 @@ void SceneExample::Init()
 	meshList[GEO_SPHERE] = MeshBuilder::GenerateSphere("Sphere", glm::vec3(1.f, 1.f, 1.f), 1.f, 16, 16);
 	meshList[GEO_CUBE] = MeshBuilder::GenerateCube("Cube", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_QUAD] = MeshBuilder::GenerateQuad("Quad", glm::vec3(1.f, 1.f, 1.f), 1.f);
-	meshList[GEO_PLANE] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 1.f);
-	meshList[GEO_PLANE]->textureID = LoadTGA("Images//ground.tga");
+	meshList[GEO_STONEFLOOR] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 1.f);
+	meshList[GEO_STONEFLOOR]->textureID = LoadTGA("Images//MedivalFloor.tga");
+	meshList[GEO_BLOOD] = MeshBuilder::GenerateQuad("Blood", glm::vec3(1.f, 1.f, 1.f), 1.f);
+	meshList[GEO_BLOOD]->textureID = LoadTGA("Images//Blood.tga");
+	meshList[GEO_NEWSPAPER] = MeshBuilder::GenerateQuad("Newspaper", glm::vec3(1.f, 1.f, 1.f), 1.f);
+	meshList[GEO_NEWSPAPER]->textureID = LoadTGA("Images//newspaper1.tga");
 	meshList[GEO_TEXTBOX] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_TEXTBOX]->textureID = LoadTGA("Images//textBox.tga");
+
+	//Generate objs
+	meshList[GEO_TREE] = MeshBuilder::GenerateOBJ("Tree", "Models//tree.obj");
+	meshList[GEO_TREE]->textureID = LoadTGA("Images//tree.tga");
+	meshList[GEO_FENCE] = MeshBuilder::GenerateOBJMTL("Fence", "Models//oldfence.obj", "Models//oldfence.mtl");
+	meshList[GEO_FENCE]->textureID = LoadTGA("Images//oldfence.tga");
+	meshList[GEO_SIGN] = MeshBuilder::GenerateOBJMTL("Sign", "Models//sign.obj", "Models//sign.mtl");
+	meshList[GEO_SIGN]->textureID = LoadTGA("Images//sign.tga");
+	meshList[GEO_JAR] = MeshBuilder::GenerateOBJMTL("Jar", "Models//jar.obj", "Models//jar.mtl");
+	meshList[GEO_JAR]->textureID = LoadTGA("Images//jar.tga");
 
 	//Generate skybox
 	meshList[GEO_LEFT] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 200.f);
@@ -94,80 +113,92 @@ void SceneExample::Init()
 
 	//Game variables
 	currGameState = RUNNING;
-	for (int i = 0; i < 50;i++) {
-		balls[i] = nullptr;
+	currInteraction = nullptr;
+	if (!pickedup_newspaper) {
+		newspaper = new Newspaper(Vector3(-27.f, 0.1f, 13.f), "Newspaper1");
+	}
+	else { newspaper = nullptr; }
+	for (int i = 0; i < 5;i++) {
+		balls[i] = nullptr; //may want to mannually init the balls
+	}
+	jars[0] = new Jar(glm::vec3{ -5, 0.f, 7.5f });
+	jars[1] = new Jar(glm::vec3{ -5, 0.f, -7.5f });
+	jars[2] = new Jar(glm::vec3{ 5, 0.f, 0.f });
+	for (int i = 0; i < 69; i++) {
+		trees[i] = nullptr;
+	}
+	for (int i = 0; i < 8; i++) {
+		trees[i] = new DylanTree(Vector3{ -35.f + (i * 7), 0, -35.f });
+		trees[i + 8] = new DylanTree(Vector3{ 35.f - (i * 7), 0, 35.f });
+		trees[i + 16] = new DylanTree(Vector3{ 35.f, 0, -35.f + (i * 7) });
+		trees[i + 24] = new DylanTree(Vector3{ -35.f, 0, 35.f - (i * 7) });
 	}
 	ballCD = 0;
-	for (int i = 0; i < 50;i++) {
-		cubes[i] = nullptr;
-	}
-	cubeCD = 0;
-	player = new Player(Vector3(0, 1, 0));
+	interactionCD = 0;
+	player = new Player(Vector3(-30, 1, 0));
+	sign = new Sign{ Vector3(-13, 0, -13), "Sign4" };
+	interactableObjs[0] = new InteractableObject{ "Ancient stone tablet", glm::vec3(-27, 0, 0)};
 	// Initialise camera properties
 	camera.Init((player->getPosition() + Vector3{ 1.f, 0.f, 0.f }).convert2glm(),
 		(player->getPosition() + Vector3{ 2.f, 0.f, 0.f }).convert2glm());
-	SoundManager::GetInstance().setBGM(BGM1);
+	SoundManager::GetInstance().setBGM(BGM3);
 }
 
-void SceneExample::Update(double dt)
+void SceneBallCup::Update(double dt)
 {
 	HandleKeyPress();
+	interactionCD -= dt;
 	if (currGameState == RUNNING) {
 		if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
-			SceneManager::GetInstance().LoadScene(SCENE_BALLCUP);
+			SceneManager::GetInstance().LoadScene(SCENE_END);
 			return;
 		}
+		//Handle player-obj interactions
+		if (interactionCD <= 0.f){
+			if (KeyboardController::GetInstance()->IsKeyPressed('E')) {
+				if (newspaper != nullptr) {
+					if ((newspaper->getPosition() - player->getPosition()).Length() < newspaper->getRadius()) {
+						newspaper->interact(*player);
+						currInteraction = newspaper;
+						currGameState = DIALOGUE;
+						interactionCD = 1.5f;
+						return;
+					}
+				}
+				if (sign != nullptr) {
+					if ((sign->getPosition() - player->getPosition()).Length() < sign->getRadius()) {
+						sign->interact(*player);
+						currInteraction = sign;
+						currGameState = DIALOGUE;
+						interactionCD = 1.5f;
+						return;
+					}
+				}
+			}
+		}
 		if (KeyboardController::GetInstance()->IsKeyPressed('M')) {
-			SoundManager::GetInstance().switchBGM(BGM2);
+			SoundManager::GetInstance().switchBGM(BGM3);
 		}
 		if (KeyboardController::GetInstance()->IsKeyPressed('N')) {
-			SoundManager::GetInstance().switchBGM(BGM1);
-		}
-		if (KeyboardController::GetInstance()->IsKeyPressed('E')) {
-			//std::cout << "Player position: " << player->getPosition().x << "|" << player->getPosition().y << "|" << player->getPosition().z << std::endl;
-			Inventory::GetInstance().addItem("grass");
+			SoundManager::GetInstance().switchBGM(BGM4);
 		}
 		if (KeyboardController::GetInstance()->IsKeyPressed('R')) {
 			for (int i = 0; i < Inventory::GetInstance().getInventory().size(); i++) {
-				std::cout << Inventory::GetInstance().getInventory()[i].name<< i << ":\n";
+				std::cout << Inventory::GetInstance().getInventory()[i].name << i << ":\n";
 				std::cout << Inventory::GetInstance().getInventory()[i].description << "\n";
-			}
-		}
-
-		ballCD -= dt;
-		cubeCD -= dt;
-
-		if (KeyboardController::GetInstance()->IsKeyPressed('B') && (ballCD <= 0.f)) {
-			for (int i = 0; i < 50; i++) {
-				if (balls[i] == nullptr) {
-					balls[i] = new Ball{ Vector3(0, 10, 0), 1, 20 };
-					SoundManager::GetInstance().playSound(METAL_PIPE);
-					ballCD = 0.5f;
-					break;
-				}
-			}
-		}
-		if (MouseController::GetInstance()->IsButtonPressed(0) && (ballCD <= 0.f)) {
-			for (int i = 0; i < 50; i++) {
-				if (balls[i] == nullptr) {
-					balls[i] = new Ball{ camera.position, 1, 20 };
-					balls[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
-					ballCD = 0.5f;
-					break;
-				}
 			}
 		}
 		CollisionData cd;
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//                                                  Ball collisions                                                   //
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 5; i++) {
 			if (balls[i] != nullptr) {
 				OverlapSphere2Ground(*balls[i], balls[i]->getHitbox().getRadius(), 0.f);
 				if (OverlapSphere2Cube(*balls[i], balls[i]->getHitbox(), *player, player->getHitbox(), cd)) {
 					ResolveCollision(cd);
 				}
-				for (int j = i + 1; j < 50; j++) {
+				for (int j = i + 1; j < 5; j++) {
 					if (balls[j] != nullptr) {
 						if (OverlapSphere2Sphere(*balls[i], balls[i]->getHitbox().getRadius(), *balls[j], balls[j]->getHitbox().getRadius(), cd))
 							ResolveCollision(cd);
@@ -182,58 +213,6 @@ void SceneExample::Update(double dt)
 				}
 			}
 		}
-
-		if (KeyboardController::GetInstance()->IsKeyPressed('C') && (cubeCD <= 0.f)) {
-			for (int i = 0; i < 50; i++) {
-				if (cubes[i] == nullptr) {
-					cubes[i] = new Cube{ Vector3(0, 10, 0), 20, 1, 1, 1 };
-					cubeCD = 0.5f;
-					break;
-				}
-			}
-		}
-		if (MouseController::GetInstance()->IsButtonPressed(1) && (cubeCD <= 0.f)) {
-			for (int i = 0; i < 50; i++) {
-				if (cubes[i] == nullptr) {
-					cubes[i] = new Cube{ camera.position, 20, 1, 1, 1 };
-					cubes[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
-					cubeCD = 0.5f;
-					break;
-				}
-			}
-		}
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//                                                  Cube collisions                                                   //
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		for (int i = 0; i < 50; i++) {
-			if (cubes[i] != nullptr) {
-				OverlapCube2Ground(*cubes[i], cubes[i]->getHitbox(), 0.f);
-				if (OverlapCube2Cube(*cubes[i], cubes[i]->getHitbox(), *player, player->getHitbox(), cd)) {
-					ResolveCollision(cd);
-				}
-				for (int j = 0; j < 50; j++) {
-					if (balls[j] != nullptr) {
-						if (OverlapSphere2Cube(*balls[j], balls[j]->getHitbox(), *cubes[i], cubes[i]->getHitbox(), cd))
-						{
-							ResolveCollision(cd);
-						}
-					}
-				}
-				for (int j = i + 1; j < 50; j++) {
-					if (cubes[j] != nullptr) {
-						if (OverlapCube2Cube(*cubes[i], cubes[i]->getHitbox(), *cubes[j], cubes[j]->getHitbox(), cd))
-							ResolveCollision(cd);
-					}
-				}
-				cubes[i]->UpdatePhysics(dt);
-				if ((cubes[i]->getPosition().x > 12.5) || (cubes[i]->getPosition().x < -12.5) ||
-					(cubes[i]->getPosition().y > 12.5) ||
-					(cubes[i]->getPosition().z > 12.5) || (cubes[i]->getPosition().z < -12.5)) {
-					delete cubes[i];
-					cubes[i] = nullptr;
-				}
-			}
-		}
 		player->movePlayer(dt, camera);
 		//std::cout << player->getPosition().x << "|" << player->getPosition().y << "|" << player->getPosition().z << "|" << std::endl;
 		player->UpdatePhysics(dt, camera);
@@ -241,10 +220,42 @@ void SceneExample::Update(double dt)
 		//Update sounds
 		SoundManager::GetInstance().updateSounds(dt);
 	}
-	
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//                                                  Dialogue state                                                    //
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	else if (currGameState == DIALOGUE) {
+		if (interactionCD <= 0.f) {
+			if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_SPACE) ||
+				KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_X) ||
+				KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_LEFT_SHIFT) ||
+				KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_E) ||
+				MouseController::GetInstance()->IsButtonPressed(0) ||
+				MouseController::GetInstance()->IsButtonPressed(1)) {
+				currInteraction->nextDialogue();
+				interactionCD = 1.5f;
+				if (currInteraction->getCurrDialogue() == nullptr) {
+					currGameState = RUNNING;
+					delete newspaper;
+					newspaper = nullptr;
+					pickedup_newspaper = true;
+					return;
+				}
+			}
+		}
+	}
+	else if (currGameState == INVENTORY) {
+		if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_RIGHT) ||
+			KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_D)) {
+			Inventory::GetInstance().nextItem();
+		}
+		else if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_LEFT) ||
+			KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_A)) {
+			Inventory::GetInstance().prevItem();
+		}
+	}
 }
 
-void SceneExample::Render()
+void SceneBallCup::Render()
 {
 	// Clear color buffer every frame
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -281,20 +292,96 @@ void SceneExample::Render()
 	//Skybox first so it is not affected by stack errors
 	RenderSkybox();
 
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//                                                Render ground                                                       //
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	meshList[GEO_STONEFLOOR]->material.kAmbient = glm::vec3(0.001, 0.001, 0.001);
+	meshList[GEO_STONEFLOOR]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_STONEFLOOR]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_STONEFLOOR]->material.kShininess = 1.0f;
+	for (int i = 0; i < 7; i++) {
+		for (int j = 0; j < 7; j++) {
+			modelStack.PushMatrix();
+			modelStack.Translate(-30 + i * 10, 0, -30 + j * 10);
+			modelStack.Rotate(-90, 1, 0, 0);
+			modelStack.Scale(10.f, 10.f, 1.f);
+			RenderMesh(meshList[GEO_STONEFLOOR], enableLight);
+			modelStack.PopMatrix();
+		}
+	}
+
+	//Render newspaper
+	if (newspaper != nullptr) {
+		modelStack.PushMatrix();
+		modelStack.Translate(newspaper->getPosition().convert2glm());
+		modelStack.Rotate(-90, 1, 0, 0);
+		modelStack.Scale(1.5f, 1.5f, 1.f);
+		meshList[GEO_NEWSPAPER]->material.kAmbient = glm::vec3(0.001, 0.001, 0.001);
+		meshList[GEO_NEWSPAPER]->material.kDiffuse = glm::vec3(1, 1, 1);
+		meshList[GEO_NEWSPAPER]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+		meshList[GEO_NEWSPAPER]->material.kShininess = 1.0f;
+		RenderMesh(meshList[GEO_NEWSPAPER], enableLight);
+		modelStack.PopMatrix();
+	}
+
+	meshList[GEO_TREE]->material.kAmbient = glm::vec3(0.001, 0.001, 0.001);
+	meshList[GEO_TREE]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_TREE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_TREE]->material.kShininess = 1.0f;
+	for (int i = 0; i < 69; i++) {
+		if (trees[i] != nullptr) {
+			modelStack.PushMatrix();
+			modelStack.Translate(trees[i]->getPosition().convert2glm());
+			modelStack.Scale(2.5f, 3.5f, 2.5f);
+			RenderMesh(meshList[GEO_TREE], enableLight);
+			modelStack.PopMatrix();
+		}
+	}
+
+	meshList[GEO_FENCE]->material.kAmbient = glm::vec3(0.001, 0.001, 0.001);
+	meshList[GEO_FENCE]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_FENCE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_FENCE]->material.kShininess = 1.0f;
+	modelStack.PushMatrix();
+	modelStack.Translate(25.f, 0.f, 0.f);
+	modelStack.Rotate(90, 0, 1, 0);
+	modelStack.Scale(10.f, 10.f, 10.f);
+	RenderMesh(meshList[GEO_FENCE], enableLight);
+	modelStack.PopMatrix();
+
+	meshList[GEO_SIGN]->material.kAmbient = glm::vec3(0.1, 0.1, 0.1);
+	meshList[GEO_SIGN]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_SIGN]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_SIGN]->material.kShininess = 1.0f;
+	modelStack.PushMatrix();
+	modelStack.Translate(sign->getPosition().convert2glm());
+	modelStack.Rotate(0, 0, 1, 0);
+	modelStack.Scale(0.5f, 0.5f, 0.5f);
+	RenderMesh(meshList[GEO_SIGN], enableLight);
+	modelStack.PopMatrix();
+
+	//Render jars
+	meshList[GEO_JAR]->material.kAmbient = glm::vec3(0.1, 0.1, 0.1);
+	meshList[GEO_JAR]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_JAR]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_JAR]->material.kShininess = 1.0f;
+	for (int i = 0; i < 3; i++) {
+		modelStack.PushMatrix();
+		modelStack.Translate(jars[i]->getPosition().convert2glm());
+		modelStack.Rotate(0, 0, 1, 0);
+		modelStack.Scale(1.25f, 1.25f, 1.25f);
+		RenderMesh(meshList[GEO_JAR], enableLight);
+		modelStack.PopMatrix();
+	}
+
+
 	// Render objects
 	modelStack.PushMatrix();
 	RenderMesh(meshList[GEO_AXES], false);
 	modelStack.PopMatrix();
 
-	modelStack.PushMatrix();
-	// Render light
-	modelStack.Translate(light[0].position.x, light[0].position.y, light[0].position.z);
-	modelStack.Scale(0.1f, 0.1f, 0.1f);
-	RenderMesh(meshList[GEO_SPHERE], false);
-	modelStack.PopMatrix();
-
 	//Render balls
-	for (int i = 0; i < 50; i++) {
+	for (int i = 0; i < 5; i++) {
 		if (balls[i] != nullptr) {
 			modelStack.PushMatrix();
 			modelStack.Translate(balls[i]->getPosition().x, balls[i]->getPosition().y, balls[i]->getPosition().z);
@@ -303,64 +390,52 @@ void SceneExample::Render()
 			modelStack.PopMatrix();
 		}
 	}
-	
-	//Render cubes
-	for (int i = 0; i < 50; i++) {
-		if (cubes[i] != nullptr) {
-			modelStack.PushMatrix();
-			modelStack.Translate(cubes[i]->getPosition().x, cubes[i]->getPosition().y, cubes[i]->getPosition().z);
-			modelStack.Scale(cubes[i]->getHitbox().getHalfDimensions().x * 2, cubes[i]->getHitbox().getHalfDimensions().y * 2, cubes[i]->getHitbox().getHalfDimensions().z * 2);
-			RenderMesh(meshList[GEO_CUBE], false);
-			modelStack.PopMatrix();
-		}
-	}
 
 	//Player
 	if (camera.cameraState != FIRST_PERSON) {
 		modelStack.PushMatrix();
 		modelStack.Translate(player->getPosition().x, player->getPosition().y, player->getPosition().z);
-		meshList[GEO_PLANE]->material.kAmbient = glm::vec3(0.5, 0.7, 0.5);
-		meshList[GEO_PLANE]->material.kDiffuse = glm::vec3(1, 1, 1);
-		meshList[GEO_PLANE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
-		meshList[GEO_PLANE]->material.kShininess = 1.0f;
 		modelStack.Scale(player->getHitbox().getHalfDimensions().x * 2, player->getHitbox().getHalfDimensions().y * 2, player->getHitbox().getHalfDimensions().z * 2);
 		RenderMesh(meshList[GEO_CUBE], false);
 		modelStack.PopMatrix();
 	}
 
-	modelStack.PushMatrix();
-	modelStack.Rotate(-90, 1, 0, 0);
-	modelStack.Scale(25.f, 25.f, 1.f);
-	meshList[GEO_PLANE]->material.kAmbient = glm::vec3(0.001, 0.001, 0.001);
-	meshList[GEO_PLANE]->material.kDiffuse = glm::vec3(1, 1, 1);
-	meshList[GEO_PLANE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
-	meshList[GEO_PLANE]->material.kShininess = 1.0f;
-	RenderMesh(meshList[GEO_PLANE], true);
-	modelStack.PopMatrix();
-
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//                                                For Inventory Render                                                //
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	if (currGameState == INVENTORY) {
+		RenderInventory();
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//                                                For Dialogue Render                                                 //
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	if (currGameState == DIALOGUE) {
 		RenderMeshOnScreen(meshList[GEO_QUAD], 400, 150, 700, 200);
+		RenderTextOnScreen(meshList[GEO_TEXT], currInteraction->getCurrDialogue()->text, glm::vec3(1, 1, 1), 0.65f, 16, 100, 175);
 	}
 }
 
-void SceneExample::Exit()
+void SceneBallCup::Exit()
 {
 	//Game variables cleanup
-	for (int i = 0; i < 50; i ++) {
+	for (int i = 0; i < 5; i ++) {
 		if (balls[i] != nullptr) {
 			delete balls[i];
 		}
 	}
-	for (int i = 0; i < 50; i++) {
-		if (cubes[i] != nullptr) {
-			delete cubes[i];
+	for (int i = 0; i < NUM_IOBJS; i++) {
+		if (interactableObjs[i] != nullptr) {
+			delete interactableObjs[i];
 		}
 	}
 	if (player != nullptr) {
-		player = nullptr;
+		delete player;
+	}
+	if (sign != nullptr) {
+		delete sign;
+	}
+	if (newspaper != nullptr) {
+		delete newspaper;
 	}
 	//Sound cleanup
 	SoundManager::GetInstance().stopBGM();
@@ -376,7 +451,7 @@ void SceneExample::Exit()
 	glDeleteProgram(m_programID);
 }
 
-void SceneExample::HandleKeyPress()
+void SceneBallCup::HandleKeyPress()
 {
 	if (KeyboardController::GetInstance()->IsKeyPressed(0x31))
 	{
@@ -398,24 +473,6 @@ void SceneExample::HandleKeyPress()
 		// Key press to enable wireframe mode for the polygon
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //wireframe mode
 	}
-
-	if (KeyboardController::GetInstance()->IsKeyPressed(VK_SPACE))
-	{
-		// Change to black background
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	}
-
-	//if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_0))
-	//{
-	//	// Toggle light on or off
-	///*	enableLight = !enableLight;*/
-
-	//	if (light[0].power <= 0.1f)
-	//		light[0].power = 1.f;
-	//	else
-	//		light[0].power = 0.1f;
-	//	glUniform1f(m_parameters[U_LIGHT0_POWER], light[0].power);
-	//}
 	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_ENTER))
 	{
 		// Change camera type
@@ -440,24 +497,10 @@ void SceneExample::HandleKeyPress()
 			currGameState = RUNNING;
 		}
 	}
-	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_TAB))
-	{
-		if (light[0].type == Light::LIGHT_POINT) {
-			light[0].type = Light::LIGHT_DIRECTIONAL;
-		}
-		else if (light[0].type == Light::LIGHT_DIRECTIONAL) {
-			light[0].type = Light::LIGHT_SPOT;
-		}
-		else {
-			light[0].type = Light::LIGHT_POINT;
-		}
-
-		glUniform1i(m_parameters[U_LIGHT0_TYPE], light[0].type);
-	}
 
 }
 
-void SceneExample::RenderSkybox()
+void SceneBallCup::RenderSkybox()
 {
 	modelStack.PushMatrix();
 	modelStack.Scale(2, 2, 2);
@@ -511,7 +554,25 @@ void SceneExample::RenderSkybox()
 	modelStack.PopMatrix();
 }
 
-void SceneExample::InitLights()
+void SceneBallCup::RenderInventory()
+{
+	RenderMeshOnScreen(meshList[GEO_QUAD], 400, 300, 700, 400);
+	RenderTextOnScreen(meshList[GEO_TEXT], "Inventory", glm::vec3(1, 1, 1), 0.65f, 32, 300, 450);
+	if (Inventory::GetInstance().getInventory().size() < 1) {
+		RenderTextOnScreen(meshList[GEO_TEXT], "Empty", glm::vec3(1, 1, 1), 0.65f, 16, 300, 350);
+	}
+	else {
+		RenderTextOnScreen(meshList[GEO_TEXT], Inventory::GetInstance().getItem().name, glm::vec3(1, 1, 1), 0.65f, 16, 125, 400);
+		if (Inventory::GetInstance().moreThan1Item())
+			RenderTextOnScreen(meshList[GEO_TEXT], std::string(" (" + std::to_string(Inventory::GetInstance().getItemQuantity()) + ')'),
+				glm::vec3(1, 1, 1), 0.65f, 16, 200, 400);
+		RenderTextOnScreen(meshList[GEO_TEXT], Inventory::GetInstance().getItem().description, glm::vec3(1, 1, 1), 0.65f, 16, 100, 350);
+		RenderTextOnScreen(meshList[GEO_TEXT], std::string('<' +std::to_string(Inventory::GetInstance().getCurrItemIndex() + 1) +
+			'/' + std::to_string(Inventory::GetInstance().getNumUniqueItems()) + '>'), glm::vec3(1, 1, 1), 0.65f, 16, 300, 150);
+	}
+}
+
+void SceneBallCup::InitLights()
 {
 	// Get a handle for our "MVP" uniform
 	m_parameters[U_MVP] = glGetUniformLocation(m_programID, "MVP");
@@ -545,10 +606,10 @@ void SceneExample::InitLights()
 	glUniform1i(m_parameters[U_NUMLIGHTS], NUM_LIGHTS);
 
 	//Light 1
-	light[0].position = glm::vec3(0, 5, 0);
+	light[0].position = glm::vec3(0, 100, 0);
 	light[0].color = glm::vec3(1, 1, 1);
 	light[0].type = Light::LIGHT_DIRECTIONAL;
-	light[0].power = 1;
+	light[0].power = 0.25f;
 	light[0].kC = 1.f;
 	light[0].kL = 0.01f;
 	light[0].kQ = 0.001f;

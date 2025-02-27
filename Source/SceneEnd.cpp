@@ -1,4 +1,4 @@
-#include "SceneExample.h"
+#include "SceneEnd.h"
 #include "GL\glew.h"
 
 // GLM Headers
@@ -23,7 +23,7 @@
 //Physics functions
 #include "CollisionDetection.h"
 
-void SceneExample::Init()
+void SceneEnd::Init()
 {
 	// Set background color to dark blue
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -57,12 +57,18 @@ void SceneExample::Init()
 		meshList[i] = nullptr;
 	}
 
+	/// <Note>
+	/// Ask Dylan Chan for blood stained ground
+	/// <\Note>
+
 	meshList[GEO_AXES] = MeshBuilder::GenerateAxes("Axes", 10000.f, 10000.f, 10000.f);
 	meshList[GEO_SPHERE] = MeshBuilder::GenerateSphere("Sphere", glm::vec3(1.f, 1.f, 1.f), 1.f, 16, 16);
 	meshList[GEO_CUBE] = MeshBuilder::GenerateCube("Cube", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_QUAD] = MeshBuilder::GenerateQuad("Quad", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_PLANE] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_PLANE]->textureID = LoadTGA("Images//ground.tga");
+	meshList[GEO_GRASSFLOOR] = MeshBuilder::GenerateQuad("Grass", glm::vec3(1.f, 1.f, 1.f), 1.f);
+	meshList[GEO_GRASSFLOOR]->textureID = LoadTGA("Images//Grass.tga");
 	meshList[GEO_TEXTBOX] = MeshBuilder::GenerateQuad("Plane", glm::vec3(1.f, 1.f, 1.f), 1.f);
 	meshList[GEO_TEXTBOX]->textureID = LoadTGA("Images//textBox.tga");
 
@@ -93,15 +99,15 @@ void SceneExample::Init()
 	enableLight = true;
 
 	//Game variables
+	if (Inventory::GetInstance().findItem("salt powder") &&
+		Inventory::GetInstance().findItem("exorcism paper") &&
+		Inventory::GetInstance().findItem("holy water")) {
+		playerWin = true;
+	}
+	else {
+		playerWin = false;
+	}
 	currGameState = RUNNING;
-	for (int i = 0; i < 50;i++) {
-		balls[i] = nullptr;
-	}
-	ballCD = 0;
-	for (int i = 0; i < 50;i++) {
-		cubes[i] = nullptr;
-	}
-	cubeCD = 0;
 	player = new Player(Vector3(0, 1, 0));
 	// Initialise camera properties
 	camera.Init((player->getPosition() + Vector3{ 1.f, 0.f, 0.f }).convert2glm(),
@@ -109,12 +115,12 @@ void SceneExample::Init()
 	SoundManager::GetInstance().setBGM(BGM1);
 }
 
-void SceneExample::Update(double dt)
+void SceneEnd::Update(double dt)
 {
 	HandleKeyPress();
 	if (currGameState == RUNNING) {
 		if (KeyboardController::GetInstance()->IsKeyPressed('Q')) {
-			SceneManager::GetInstance().LoadScene(SCENE_BALLCUP);
+			SceneManager::GetInstance().LoadScene(SCENE_LOSE);
 			return;
 		}
 		if (KeyboardController::GetInstance()->IsKeyPressed('M')) {
@@ -123,117 +129,6 @@ void SceneExample::Update(double dt)
 		if (KeyboardController::GetInstance()->IsKeyPressed('N')) {
 			SoundManager::GetInstance().switchBGM(BGM1);
 		}
-		if (KeyboardController::GetInstance()->IsKeyPressed('E')) {
-			//std::cout << "Player position: " << player->getPosition().x << "|" << player->getPosition().y << "|" << player->getPosition().z << std::endl;
-			Inventory::GetInstance().addItem("grass");
-		}
-		if (KeyboardController::GetInstance()->IsKeyPressed('R')) {
-			for (int i = 0; i < Inventory::GetInstance().getInventory().size(); i++) {
-				std::cout << Inventory::GetInstance().getInventory()[i].name<< i << ":\n";
-				std::cout << Inventory::GetInstance().getInventory()[i].description << "\n";
-			}
-		}
-
-		ballCD -= dt;
-		cubeCD -= dt;
-
-		if (KeyboardController::GetInstance()->IsKeyPressed('B') && (ballCD <= 0.f)) {
-			for (int i = 0; i < 50; i++) {
-				if (balls[i] == nullptr) {
-					balls[i] = new Ball{ Vector3(0, 10, 0), 1, 20 };
-					SoundManager::GetInstance().playSound(METAL_PIPE);
-					ballCD = 0.5f;
-					break;
-				}
-			}
-		}
-		if (MouseController::GetInstance()->IsButtonPressed(0) && (ballCD <= 0.f)) {
-			for (int i = 0; i < 50; i++) {
-				if (balls[i] == nullptr) {
-					balls[i] = new Ball{ camera.position, 1, 20 };
-					balls[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
-					ballCD = 0.5f;
-					break;
-				}
-			}
-		}
-		CollisionData cd;
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//                                                  Ball collisions                                                   //
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		for (int i = 0; i < 50; i++) {
-			if (balls[i] != nullptr) {
-				OverlapSphere2Ground(*balls[i], balls[i]->getHitbox().getRadius(), 0.f);
-				if (OverlapSphere2Cube(*balls[i], balls[i]->getHitbox(), *player, player->getHitbox(), cd)) {
-					ResolveCollision(cd);
-				}
-				for (int j = i + 1; j < 50; j++) {
-					if (balls[j] != nullptr) {
-						if (OverlapSphere2Sphere(*balls[i], balls[i]->getHitbox().getRadius(), *balls[j], balls[j]->getHitbox().getRadius(), cd))
-							ResolveCollision(cd);
-					}
-				}
-				balls[i]->UpdatePhysics(dt);
-				if ((balls[i]->getPosition().x > 12.5) || (balls[i]->getPosition().x < -12.5) ||
-					(balls[i]->getPosition().y > 12.5) ||
-					(balls[i]->getPosition().z > 12.5) || (balls[i]->getPosition().z < -12.5)) {
-					delete balls[i];
-					balls[i] = nullptr;
-				}
-			}
-		}
-
-		if (KeyboardController::GetInstance()->IsKeyPressed('C') && (cubeCD <= 0.f)) {
-			for (int i = 0; i < 50; i++) {
-				if (cubes[i] == nullptr) {
-					cubes[i] = new Cube{ Vector3(0, 10, 0), 20, 1, 1, 1 };
-					cubeCD = 0.5f;
-					break;
-				}
-			}
-		}
-		if (MouseController::GetInstance()->IsButtonPressed(1) && (cubeCD <= 0.f)) {
-			for (int i = 0; i < 50; i++) {
-				if (cubes[i] == nullptr) {
-					cubes[i] = new Cube{ camera.position, 20, 1, 1, 1 };
-					cubes[i]->AddImpulse(Vector3(normalize(camera.target - camera.position)) * 10);
-					cubeCD = 0.5f;
-					break;
-				}
-			}
-		}
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		//                                                  Cube collisions                                                   //
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		for (int i = 0; i < 50; i++) {
-			if (cubes[i] != nullptr) {
-				OverlapCube2Ground(*cubes[i], cubes[i]->getHitbox(), 0.f);
-				if (OverlapCube2Cube(*cubes[i], cubes[i]->getHitbox(), *player, player->getHitbox(), cd)) {
-					ResolveCollision(cd);
-				}
-				for (int j = 0; j < 50; j++) {
-					if (balls[j] != nullptr) {
-						if (OverlapSphere2Cube(*balls[j], balls[j]->getHitbox(), *cubes[i], cubes[i]->getHitbox(), cd))
-						{
-							ResolveCollision(cd);
-						}
-					}
-				}
-				for (int j = i + 1; j < 50; j++) {
-					if (cubes[j] != nullptr) {
-						if (OverlapCube2Cube(*cubes[i], cubes[i]->getHitbox(), *cubes[j], cubes[j]->getHitbox(), cd))
-							ResolveCollision(cd);
-					}
-				}
-				cubes[i]->UpdatePhysics(dt);
-				if ((cubes[i]->getPosition().x > 12.5) || (cubes[i]->getPosition().x < -12.5) ||
-					(cubes[i]->getPosition().y > 12.5) ||
-					(cubes[i]->getPosition().z > 12.5) || (cubes[i]->getPosition().z < -12.5)) {
-					delete cubes[i];
-					cubes[i] = nullptr;
-				}
-			}
-		}
 		player->movePlayer(dt, camera);
 		//std::cout << player->getPosition().x << "|" << player->getPosition().y << "|" << player->getPosition().z << "|" << std::endl;
 		player->UpdatePhysics(dt, camera);
@@ -241,10 +136,20 @@ void SceneExample::Update(double dt)
 		//Update sounds
 		SoundManager::GetInstance().updateSounds(dt);
 	}
+	else if (currGameState == INVENTORY) {
+		if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_RIGHT) ||
+			KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_D)) {
+			Inventory::GetInstance().nextItem();
+		}
+		else if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_LEFT) ||
+			KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_A)) {
+			Inventory::GetInstance().prevItem();
+		}
+	}
 	
 }
 
-void SceneExample::Render()
+void SceneEnd::Render()
 {
 	// Clear color buffer every frame
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -293,28 +198,6 @@ void SceneExample::Render()
 	RenderMesh(meshList[GEO_SPHERE], false);
 	modelStack.PopMatrix();
 
-	//Render balls
-	for (int i = 0; i < 50; i++) {
-		if (balls[i] != nullptr) {
-			modelStack.PushMatrix();
-			modelStack.Translate(balls[i]->getPosition().x, balls[i]->getPosition().y, balls[i]->getPosition().z);
-			modelStack.Scale(1, 1, 1);
-			RenderMesh(meshList[GEO_SPHERE], false);
-			modelStack.PopMatrix();
-		}
-	}
-	
-	//Render cubes
-	for (int i = 0; i < 50; i++) {
-		if (cubes[i] != nullptr) {
-			modelStack.PushMatrix();
-			modelStack.Translate(cubes[i]->getPosition().x, cubes[i]->getPosition().y, cubes[i]->getPosition().z);
-			modelStack.Scale(cubes[i]->getHitbox().getHalfDimensions().x * 2, cubes[i]->getHitbox().getHalfDimensions().y * 2, cubes[i]->getHitbox().getHalfDimensions().z * 2);
-			RenderMesh(meshList[GEO_CUBE], false);
-			modelStack.PopMatrix();
-		}
-	}
-
 	//Player
 	if (camera.cameraState != FIRST_PERSON) {
 		modelStack.PushMatrix();
@@ -328,39 +211,41 @@ void SceneExample::Render()
 		modelStack.PopMatrix();
 	}
 
-	modelStack.PushMatrix();
-	modelStack.Rotate(-90, 1, 0, 0);
-	modelStack.Scale(25.f, 25.f, 1.f);
-	meshList[GEO_PLANE]->material.kAmbient = glm::vec3(0.001, 0.001, 0.001);
-	meshList[GEO_PLANE]->material.kDiffuse = glm::vec3(1, 1, 1);
-	meshList[GEO_PLANE]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
-	meshList[GEO_PLANE]->material.kShininess = 1.0f;
-	RenderMesh(meshList[GEO_PLANE], true);
-	modelStack.PopMatrix();
+	//Render ground
+	meshList[GEO_GRASSFLOOR]->material.kAmbient = glm::vec3(0.001, 0.001, 0.001);
+	meshList[GEO_GRASSFLOOR]->material.kDiffuse = glm::vec3(1, 1, 1);
+	meshList[GEO_GRASSFLOOR]->material.kSpecular = glm::vec3(0.5, 0.5, 0.5);
+	meshList[GEO_GRASSFLOOR]->material.kShininess = 1.0f;
+	for (int i = 0; i < 7; i++) {
+		for (int j = 0; j < 7; j++) {
+			modelStack.PushMatrix();
+			modelStack.Translate(-30 + i * 10, 0, -30 + j * 10);
+			modelStack.Rotate(-90, 1, 0, 0);
+			modelStack.Scale(10.f, 10.f, 1.f);
+			RenderMesh(meshList[GEO_GRASSFLOOR], enableLight);
+			modelStack.PopMatrix();
+		}
+	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//                                                For Inventory Render                                                //
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	if (currGameState == INVENTORY) {
+		RenderInventory();
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//                                                For Dialogue Render                                                 //
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	if (currGameState == DIALOGUE) {
 		RenderMeshOnScreen(meshList[GEO_QUAD], 400, 150, 700, 200);
+		RenderTextOnScreen(meshList[GEO_TEXT], currInteraction->getCurrDialogue()->text, glm::vec3(1, 1, 1), 0.65f, 16, 100, 175);
 	}
 }
 
-void SceneExample::Exit()
+void SceneEnd::Exit()
 {
-	//Game variables cleanup
-	for (int i = 0; i < 50; i ++) {
-		if (balls[i] != nullptr) {
-			delete balls[i];
-		}
-	}
-	for (int i = 0; i < 50; i++) {
-		if (cubes[i] != nullptr) {
-			delete cubes[i];
-		}
-	}
 	if (player != nullptr) {
-		player = nullptr;
+		delete player;
 	}
 	//Sound cleanup
 	SoundManager::GetInstance().stopBGM();
@@ -376,7 +261,7 @@ void SceneExample::Exit()
 	glDeleteProgram(m_programID);
 }
 
-void SceneExample::HandleKeyPress()
+void SceneEnd::HandleKeyPress()
 {
 	if (KeyboardController::GetInstance()->IsKeyPressed(0x31))
 	{
@@ -404,18 +289,6 @@ void SceneExample::HandleKeyPress()
 		// Change to black background
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	}
-
-	//if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_0))
-	//{
-	//	// Toggle light on or off
-	///*	enableLight = !enableLight;*/
-
-	//	if (light[0].power <= 0.1f)
-	//		light[0].power = 1.f;
-	//	else
-	//		light[0].power = 0.1f;
-	//	glUniform1f(m_parameters[U_LIGHT0_POWER], light[0].power);
-	//}
 	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_ENTER))
 	{
 		// Change camera type
@@ -440,24 +313,10 @@ void SceneExample::HandleKeyPress()
 			currGameState = RUNNING;
 		}
 	}
-	if (KeyboardController::GetInstance()->IsKeyPressed(GLFW_KEY_TAB))
-	{
-		if (light[0].type == Light::LIGHT_POINT) {
-			light[0].type = Light::LIGHT_DIRECTIONAL;
-		}
-		else if (light[0].type == Light::LIGHT_DIRECTIONAL) {
-			light[0].type = Light::LIGHT_SPOT;
-		}
-		else {
-			light[0].type = Light::LIGHT_POINT;
-		}
-
-		glUniform1i(m_parameters[U_LIGHT0_TYPE], light[0].type);
-	}
 
 }
 
-void SceneExample::RenderSkybox()
+void SceneEnd::RenderSkybox()
 {
 	modelStack.PushMatrix();
 	modelStack.Scale(2, 2, 2);
@@ -510,8 +369,24 @@ void SceneExample::RenderSkybox()
 	modelStack.PopMatrix();
 	modelStack.PopMatrix();
 }
-
-void SceneExample::InitLights()
+void SceneEnd::RenderInventory()
+{
+	RenderMeshOnScreen(meshList[GEO_QUAD], 400, 300, 700, 400);
+	RenderTextOnScreen(meshList[GEO_TEXT], "Inventory", glm::vec3(1, 1, 1), 0.65f, 32, 300, 450);
+	if (Inventory::GetInstance().getInventory().size() < 1) {
+		RenderTextOnScreen(meshList[GEO_TEXT], "Empty", glm::vec3(1, 1, 1), 0.65f, 16, 300, 350);
+	}
+	else {
+		RenderTextOnScreen(meshList[GEO_TEXT], Inventory::GetInstance().getItem().name, glm::vec3(1, 1, 1), 0.65f, 16, 125, 400);
+		if (Inventory::GetInstance().moreThan1Item())
+			RenderTextOnScreen(meshList[GEO_TEXT], std::string(" (" + std::to_string(Inventory::GetInstance().getItemQuantity()) + ')'),
+				glm::vec3(1, 1, 1), 0.65f, 16, 200, 400);
+		RenderTextOnScreen(meshList[GEO_TEXT], Inventory::GetInstance().getItem().description, glm::vec3(1, 1, 1), 0.65f, 16, 100, 350);
+		RenderTextOnScreen(meshList[GEO_TEXT], std::string('<' + std::to_string(Inventory::GetInstance().getCurrItemIndex() + 1) +
+			'/' + std::to_string(Inventory::GetInstance().getNumUniqueItems()) + '>'), glm::vec3(1, 1, 1), 0.65f, 16, 300, 150);
+	}
+}
+void SceneEnd::InitLights()
 {
 	// Get a handle for our "MVP" uniform
 	m_parameters[U_MVP] = glGetUniformLocation(m_programID, "MVP");
@@ -548,7 +423,7 @@ void SceneExample::InitLights()
 	light[0].position = glm::vec3(0, 5, 0);
 	light[0].color = glm::vec3(1, 1, 1);
 	light[0].type = Light::LIGHT_DIRECTIONAL;
-	light[0].power = 1;
+	light[0].power = 0.25f;
 	light[0].kC = 1.f;
 	light[0].kL = 0.01f;
 	light[0].kQ = 0.001f;

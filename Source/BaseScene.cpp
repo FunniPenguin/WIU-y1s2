@@ -16,6 +16,12 @@
 #include "KeyboardController.h"
 #include "MouseController.h"
 #include "LoadTGA.h"
+#include "Inventory.h"
+
+BaseScene::BaseScene()
+{
+	player = nullptr;
+}
 
 void BaseScene::Exit()
 {
@@ -118,7 +124,7 @@ void BaseScene::RenderMeshOnScreen(Mesh* mesh, float x, float y, float sizex, fl
 	modelStack.PopMatrix();
 	glEnable(GL_DEPTH_TEST);
 }
-void BaseScene::RenderTextOnScreen(Mesh* mesh, std::string text, glm::vec3 color, float size, float x, float y) {
+void BaseScene::RenderTextOnScreen(Mesh* mesh, std::string text, glm::vec3 color, float Spacing, float size, float x, float y) {
 	if (!mesh || mesh->textureID <= 0) // Proper error check
 		return;
 
@@ -133,6 +139,7 @@ void BaseScene::RenderTextOnScreen(Mesh* mesh, std::string text, glm::vec3 color
 	modelStack.PushMatrix();
 	modelStack.LoadIdentity();
 	modelStack.Translate(x, y, 0);
+
 	modelStack.Scale(size, size, size);
 	glUniform1i(m_parameters[U_TEXT_ENABLED], 1);
 	glUniform3fv(m_parameters[U_TEXT_COLOR], 1, &color.r);
@@ -141,12 +148,17 @@ void BaseScene::RenderTextOnScreen(Mesh* mesh, std::string text, glm::vec3 color
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mesh->textureID);
 	glUniform1i(m_parameters[U_COLOR_TEXTURE], 0);
-	for (unsigned i = 0; i < text.length(); ++i) {
-		glm::mat4 characterSpacing = glm::translate(glm::mat4(1.f), glm::vec3(i * 1.0f, 0, 0));
+
+	float spacing = Spacing;
+
+	for (unsigned i = 0; i < text.length(); ++i)
+	{
+		glm::mat4 characterSpacing = glm::translate(glm::mat4(1.f), glm::vec3(spacing + i * spacing, 0.5f, 0));
 		glm::mat4 MVP = projectionStack.Top() * viewStack.Top() * modelStack.Top() * characterSpacing;
 		glUniformMatrix4fv(m_parameters[U_MVP], 1, GL_FALSE, glm::value_ptr(MVP));
 		mesh->Render((unsigned)text[i] * 6, 6);
 	}
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glUniform1i(m_parameters[U_TEXT_ENABLED], 0);
 	projectionStack.PopMatrix();

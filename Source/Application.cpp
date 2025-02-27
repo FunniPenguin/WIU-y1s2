@@ -13,8 +13,10 @@
 
 //Functional headers
 #include "SceneManager.h"
+#include "SoundManager.h"
 #include "KeyboardController.h"
 #include "MouseController.h"
+#include "Inventory.h"
 
 GLFWwindow* m_window;
 const unsigned char FPS = 60; // FPS of this game
@@ -130,7 +132,9 @@ void Application::Init()
 
 void Application::Run()
 {
+	SoundManager::GetInstance().Init();
 	SceneManager::GetInstance().InitScene(SCENE_START);
+	Inventory::GetInstance().Init();
 	//Main Loop
 	m_timer.startTimer();    // Start timer to calculate how long it takes to render this frame
 	while (!glfwWindowShouldClose(m_window) && !IsKeyPressed(VK_ESCAPE))
@@ -156,6 +160,7 @@ void Application::Run()
 void Application::Exit()
 {
 	SceneManager::GetInstance().Exit();
+	SoundManager::GetInstance().Exit();
 	KeyboardController::DestroyInstance();
 	MouseController::DestroyInstance();
 	//Close OpenGL window and terminate GLFW
